@@ -1,9 +1,28 @@
+'use client'
+
 import { MainLayout } from "@/components/layout/main-layout"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DollarSign, Package, TrendingUp, ListChecks } from "lucide-react"
+import { useInventoryItems } from "@/hooks/use-inventory"
+import { formatCurrency } from "@/lib/utils"
 
 export default function DashboardPage() {
+  const { data: inventoryData } = useInventoryItems()
+
+  const inventoryValue = inventoryData?.items.reduce((sum, item) => {
+    if (item.status === 'IN_STOCK' || item.status === 'LISTED') {
+      return sum + item.acquisitionCost
+    }
+    return sum
+  }, 0) || 0
+
+  const activeListings = inventoryData?.items.filter(
+    (item) => item.status === 'LISTED'
+  ).length || 0
+
+  const totalItems = inventoryData?.items.length || 0
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -23,7 +42,7 @@ export default function DashboardPage() {
           />
           <MetricCard
             title="Active Listings"
-            value="247"
+            value={String(activeListings)}
             icon={ListChecks}
             trend={{ value: "3.2% from last week", isPositive: true }}
           />
@@ -35,7 +54,7 @@ export default function DashboardPage() {
           />
           <MetricCard
             title="Inventory Value"
-            value="$28,900"
+            value={formatCurrency(inventoryValue)}
             icon={Package}
           />
         </div>
