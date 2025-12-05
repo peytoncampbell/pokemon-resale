@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { X, Search } from 'lucide-react'
-import { useAddInventoryItem, useSearchCards } from '@/hooks/use-inventory'
+import { useAddInventoryItem, useSearchCards, useRecentCards } from '@/hooks/use-inventory'
 import { pokemonApi, type PokemonCard } from '@/lib/pokemon-api'
 import { formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
@@ -34,8 +34,12 @@ const LOCATIONS = [
 export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCard, setSelectedCard] = useState<PokemonCard | null>(null)
+  const { data: recentCards, isLoading: isLoadingRecent } = useRecentCards()
   const { data: searchResults, isLoading: isSearching } = useSearchCards(searchQuery)
   const addItem = useAddInventoryItem()
+
+  const displayCards = searchQuery.length > 2 ? searchResults : recentCards
+  const isLoading = searchQuery.length > 2 ? isSearching : isLoadingRecent
 
   const {
     register,
@@ -106,7 +110,9 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
           {!selectedCard ? (
             <div className="p-6 space-y-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Search Pokemon Cards</label>
+                <label className="text-sm font-medium mb-2 block">
+                  {searchQuery.length > 2 ? 'Search Results' : 'Recent Pokemon Cards'}
+                </label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
@@ -120,15 +126,15 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                 </div>
               </div>
 
-              {isSearching && (
+              {isLoading && (
                 <div className="flex items-center justify-center py-8">
                   <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
                 </div>
               )}
 
-              {searchResults && searchResults.data.length > 0 && (
+              {!isLoading && displayCards && displayCards.data.length > 0 && (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {searchResults.data.map((card) => {
+                  {displayCards.data.map((card) => {
                     const marketPrice = pokemonApi.getMarketPrice(card)
                     return (
                       <button
@@ -158,17 +164,9 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                 </div>
               )}
 
-              {searchQuery.length > 2 && !isSearching && searchResults?.data.length === 0 && (
+              {!isLoading && searchQuery.length > 2 && displayCards?.data.length === 0 && (
                 <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground">No cards found</p>
-                </div>
-              )}
-
-              {searchQuery.length <= 2 && (
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground">
-                    Type at least 3 characters to search
-                  </p>
+                  <p className="text-sm text-muted-foreground">No cards found. Try a different search.</p>
                 </div>
               )}
             </div>

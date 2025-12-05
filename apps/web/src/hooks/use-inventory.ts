@@ -102,6 +102,13 @@ export function useDeleteInventoryItem() {
   })
 }
 
+export function useRecentCards() {
+  return useQuery({
+    queryKey: ['pokemon', 'recent'],
+    queryFn: () => pokemonApi.getRecentCards(),
+  })
+}
+
 export function useSearchCards(query: string) {
   return useQuery({
     queryKey: ['pokemon', 'search', query],

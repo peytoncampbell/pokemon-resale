@@ -70,7 +70,23 @@ export interface SearchCardsResponse {
 }
 
 export const pokemonApi = {
-  async searchCards(query: string, page = 1, pageSize = 20): Promise<SearchCardsResponse> {
+  async getRecentCards(page = 1, pageSize = 30): Promise<SearchCardsResponse> {
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(pageSize),
+      orderBy: '-set.releaseDate',
+    })
+
+    const response = await fetch(`${POKEMON_API_BASE}/cards?${params}`)
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch cards')
+    }
+
+    return response.json()
+  },
+
+  async searchCards(query: string, page = 1, pageSize = 30): Promise<SearchCardsResponse> {
     const params = new URLSearchParams({
       q: `name:${query}*`,
       page: String(page),
