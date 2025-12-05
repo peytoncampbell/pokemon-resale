@@ -5,16 +5,16 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { useInventoryItems } from '@/hooks/use-inventory'
+import { useInventoryItems, useDeleteInventoryItem } from '@/hooks/use-inventory'
 import { formatCurrency } from '@/lib/utils'
-import { Grid3X3, List, Plus, Search, MapPin, MoreVertical } from 'lucide-react'
+import { Grid3X3, List, Plus, Search, MapPin, Trash2 } from 'lucide-react'
 import { AddInventoryModal } from '@/components/inventory/add-inventory-modal'
+import Image from 'next/image'
 
 const STATUS_COLORS = {
   IN_STOCK: 'success',
   LISTED: 'info',
   SOLD: 'default',
-  DAMAGED: 'destructive',
 } as const
 
 export default function InventoryPage() {
@@ -23,18 +23,25 @@ export default function InventoryPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
-  const { data, isLoading, error } = useInventoryItems(statusFilter)
+  const { data: items, isLoading, error } = useInventoryItems(statusFilter)
+  const deleteItem = useDeleteInventoryItem()
 
-  const filteredItems = data?.items.filter((item) =>
-    searchQuery ? item.cardId.toLowerCase().includes(searchQuery.toLowerCase()) : true
+  const filteredItems = items?.filter((item) =>
+    searchQuery ? item.card_name.toLowerCase().includes(searchQuery.toLowerCase()) : true
   )
 
   const totalValue = filteredItems?.reduce((sum, item) => {
     if (item.status === 'IN_STOCK' || item.status === 'LISTED') {
-      return sum + item.acquisitionCost
+      return sum + (item.acquisition_cost * item.quantity)
     }
     return sum
   }, 0) || 0
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this item?')) {
+      await deleteItem.mutateAsync(id)
+    }
+  }
 
   return (
     <MainLayout>
@@ -113,13 +120,6 @@ export default function InventoryPage() {
           >
             Sold
           </Button>
-          <Button
-            variant={statusFilter === 'DAMAGED' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStatusFilter('DAMAGED')}
-          >
-            Damaged
-          </Button>
         </div>
 
         <div className="flex items-center justify-between rounded-lg border bg-muted/50 px-4 py-3">
@@ -152,31 +152,50 @@ export default function InventoryPage() {
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredItems.map((item) => (
                   <Card key={item.id} className="overflow-hidden">
-                    <div className="aspect-video bg-muted flex items-center justify-center">
-                      <Package className="h-12 w-12 text-muted-foreground" />
+                    <div className="aspect-[3/4] bg-muted flex items-center justify-center relative">
+                      {item.card_image ? (
+                        <Image
+                          src={item.card_image}
+                          alt={item.card_name}
+                          fill
+                          className="object-contain"
+                          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                        />
+                      ) : (
+                        <div className="text-center p-4">
+                          <p className="text-sm text-muted-foreground">No image</p>
+                        </div>
+                      )}
                     </div>
                     <CardContent className="p-4 space-y-3">
                       <div>
-                        <h3 className="font-semibold line-clamp-1">{item.cardId}</h3>
-                        <p className="text-sm text-muted-foreground">{item.condition}</p>
+                        <h3 className="font-semibold line-clamp-1">{item.card_name}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-1">{item.set_name || 'Unknown Set'}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant={STATUS_COLORS[item.status]}>
                           {item.status.replace('_', ' ')}
                         </Badge>
-                        {item.location && (
-                          <Badge variant="outline" className="gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {item.location.name}
-                          </Badge>
-                        )}
+                        <Badge variant="outline" className="gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {item.location}
+                        </Badge>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold">
-                          {formatCurrency(item.acquisitionCost)}
-                        </span>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Cost</p>
+                          <p className="font-bold">{formatCurrency(item.acquisition_cost)}</p>
+                          {item.quantity > 1 && (
+                            <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(item.id)}
+                          disabled={deleteItem.isPending}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
                     </CardContent>
@@ -188,29 +207,45 @@ export default function InventoryPage() {
                 {filteredItems.map((item) => (
                   <Card key={item.id}>
                     <CardContent className="flex items-center gap-4 p-4">
-                      <div className="h-16 w-16 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                        <Package className="h-8 w-8 text-muted-foreground" />
+                      <div className="h-20 w-14 rounded bg-muted flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+                        {item.card_image ? (
+                          <Image
+                            src={item.card_image}
+                            alt={item.card_name}
+                            fill
+                            className="object-cover"
+                            sizes="56px"
+                          />
+                        ) : (
+                          <p className="text-xs text-muted-foreground">No image</p>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold truncate">{item.cardId}</h3>
-                        <p className="text-sm text-muted-foreground">{item.condition}</p>
+                        <h3 className="font-semibold truncate">{item.card_name}</h3>
+                        <p className="text-sm text-muted-foreground truncate">{item.set_name || 'Unknown Set'}</p>
+                        {item.quantity > 1 && (
+                          <p className="text-xs text-muted-foreground">Quantity: {item.quantity}</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant={STATUS_COLORS[item.status]}>
                           {item.status.replace('_', ' ')}
                         </Badge>
-                        {item.location && (
-                          <Badge variant="outline" className="gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {item.location.name}
-                          </Badge>
-                        )}
+                        <Badge variant="outline" className="gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {item.location}
+                        </Badge>
                       </div>
                       <span className="text-lg font-bold whitespace-nowrap">
-                        {formatCurrency(item.acquisitionCost)}
+                        {formatCurrency(item.acquisition_cost)}
                       </span>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(item.id)}
+                        disabled={deleteItem.isPending}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </CardContent>
                   </Card>
@@ -220,16 +255,18 @@ export default function InventoryPage() {
 
             {filteredItems.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12">
-                <Package className="h-12 w-12 text-muted-foreground mb-4" />
+                <div className="h-24 w-24 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <Plus className="h-12 w-12 text-muted-foreground" />
+                </div>
                 <h3 className="text-lg font-semibold mb-2">No inventory items found</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   {searchQuery || statusFilter
                     ? 'Try adjusting your filters'
-                    : 'Get started by adding your first item'}
+                    : 'Get started by adding your first card'}
                 </p>
                 <Button onClick={() => setIsAddModalOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Add Item
+                  Add Card
                 </Button>
               </div>
             )}
@@ -242,25 +279,5 @@ export default function InventoryPage() {
         onClose={() => setIsAddModalOpen(false)}
       />
     </MainLayout>
-  )
-}
-
-function Package({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M16.5 9.4 7.55 4.24" />
-      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-      <polyline points="3.29 7 12 12 20.71 7" />
-      <line x1="12" x2="12" y1="22" y2="12" />
-    </svg>
   )
 }

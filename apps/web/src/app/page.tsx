@@ -8,20 +8,20 @@ import { useInventoryItems } from "@/hooks/use-inventory"
 import { formatCurrency } from "@/lib/utils"
 
 export default function DashboardPage() {
-  const { data: inventoryData } = useInventoryItems()
+  const { data: inventory } = useInventoryItems()
 
-  const inventoryValue = inventoryData?.items.reduce((sum, item) => {
+  const inventoryValue = inventory?.reduce((sum, item) => {
     if (item.status === 'IN_STOCK' || item.status === 'LISTED') {
-      return sum + item.acquisitionCost
+      return sum + (item.acquisition_cost * item.quantity)
     }
     return sum
   }, 0) || 0
 
-  const activeListings = inventoryData?.items.filter(
+  const activeListings = inventory?.filter(
     (item) => item.status === 'LISTED'
   ).length || 0
 
-  const totalItems = inventoryData?.items.length || 0
+  const totalItems = inventory?.length || 0
 
   return (
     <MainLayout>
