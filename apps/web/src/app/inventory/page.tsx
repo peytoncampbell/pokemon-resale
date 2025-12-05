@@ -45,15 +45,18 @@ export default function InventoryPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Inventory</h1>
-            <p className="text-muted-foreground">
-              Manage your Pokemon card inventory
+            <h1 className="text-4xl font-bold tracking-tight mb-2">Inventory</h1>
+            <p className="text-muted-foreground text-lg">
+              Manage your Pokemon card collection
             </p>
           </div>
-          <Button onClick={() => setIsAddModalOpen(true)}>
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-gradient-to-r from-[#DC143C] to-[#FF1744] hover:shadow-lg hover:shadow-[#DC143C]/20 transition-all rounded-xl px-6"
+          >
             <Plus className="mr-2 h-4 w-4" />
             Add Item
           </Button>
@@ -61,22 +64,23 @@ export default function InventoryPage() {
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search inventory..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-9 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="w-full rounded-xl border border-input bg-background pl-11 pr-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C]/20 transition-all"
             />
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 rounded-md border p-1">
+            <div className="flex items-center gap-1 rounded-xl border p-1 bg-background shadow-sm">
               <Button
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('grid')}
+                className={viewMode === 'grid' ? 'bg-gradient-to-r from-[#DC143C] to-[#FF1744] rounded-lg' : 'rounded-lg'}
               >
                 <Grid3X3 className="h-4 w-4" />
               </Button>
@@ -84,6 +88,7 @@ export default function InventoryPage() {
                 variant={viewMode === 'list' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('list')}
+                className={viewMode === 'list' ? 'bg-gradient-to-r from-[#DC143C] to-[#FF1744] rounded-lg' : 'rounded-lg'}
               >
                 <List className="h-4 w-4" />
               </Button>
@@ -92,41 +97,53 @@ export default function InventoryPage() {
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto pb-2">
-          <Button
-            variant={!statusFilter ? 'default' : 'outline'}
-            size="sm"
+          <button
             onClick={() => setStatusFilter(undefined)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              !statusFilter
+                ? 'bg-gradient-to-r from-[#DC143C] to-[#FF1744] text-white shadow-md'
+                : 'bg-background border hover:bg-accent'
+            }`}
           >
             All
-          </Button>
-          <Button
-            variant={statusFilter === 'IN_STOCK' ? 'default' : 'outline'}
-            size="sm"
+          </button>
+          <button
             onClick={() => setStatusFilter('IN_STOCK')}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              statusFilter === 'IN_STOCK'
+                ? 'bg-gradient-to-r from-[#DC143C] to-[#FF1744] text-white shadow-md'
+                : 'bg-background border hover:bg-accent'
+            }`}
           >
             In Stock
-          </Button>
-          <Button
-            variant={statusFilter === 'LISTED' ? 'default' : 'outline'}
-            size="sm"
+          </button>
+          <button
             onClick={() => setStatusFilter('LISTED')}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              statusFilter === 'LISTED'
+                ? 'bg-gradient-to-r from-[#DC143C] to-[#FF1744] text-white shadow-md'
+                : 'bg-background border hover:bg-accent'
+            }`}
           >
             Listed
-          </Button>
-          <Button
-            variant={statusFilter === 'SOLD' ? 'default' : 'outline'}
-            size="sm"
+          </button>
+          <button
             onClick={() => setStatusFilter('SOLD')}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              statusFilter === 'SOLD'
+                ? 'bg-gradient-to-r from-[#DC143C] to-[#FF1744] text-white shadow-md'
+                : 'bg-background border hover:bg-accent'
+            }`}
           >
             Sold
-          </Button>
+          </button>
         </div>
 
-        <div className="flex items-center justify-between rounded-lg border bg-muted/50 px-4 py-3">
-          <p className="text-sm font-medium">
+        <div className="flex items-center justify-between rounded-2xl border-none bg-gradient-to-br from-background to-accent/10 px-6 py-4 shadow-sm">
+          <p className="text-sm font-semibold">
             {filteredItems?.length || 0} items
           </p>
-          <p className="text-sm font-medium">
+          <p className="text-sm font-semibold text-[#DC143C]">
             Total Value: {formatCurrency(totalValue)}
           </p>
         </div>
@@ -149,16 +166,16 @@ export default function InventoryPage() {
         {!isLoading && !error && filteredItems && (
           <>
             {viewMode === 'grid' ? (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredItems.map((item) => (
-                  <Card key={item.id} className="overflow-hidden">
-                    <div className="aspect-[3/4] bg-muted flex items-center justify-center relative">
+                  <Card key={item.id} className="overflow-hidden border-none shadow-sm hover:shadow-lg transition-all group">
+                    <div className="aspect-[3/4] bg-gradient-to-br from-accent/10 to-accent/5 flex items-center justify-center relative">
                       {item.card_image ? (
                         <Image
                           src={item.card_image}
                           alt={item.card_name}
                           fill
-                          className="object-contain"
+                          className="object-contain p-4 group-hover:scale-105 transition-transform"
                           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                         />
                       ) : (
@@ -167,24 +184,24 @@ export default function InventoryPage() {
                         </div>
                       )}
                     </div>
-                    <CardContent className="p-4 space-y-3">
+                    <CardContent className="p-5 space-y-3">
                       <div>
-                        <h3 className="font-semibold line-clamp-1">{item.card_name}</h3>
+                        <h3 className="font-bold line-clamp-1 text-lg">{item.card_name}</h3>
                         <p className="text-sm text-muted-foreground line-clamp-1">{item.set_name || 'Unknown Set'}</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={STATUS_COLORS[item.status]}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant={STATUS_COLORS[item.status]} className="rounded-lg">
                           {item.status.replace('_', ' ')}
                         </Badge>
-                        <Badge variant="outline" className="gap-1">
+                        <Badge variant="outline" className="gap-1 rounded-lg">
                           <MapPin className="h-3 w-3" />
                           {item.location}
                         </Badge>
                       </div>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between pt-2 border-t">
                         <div>
-                          <p className="text-xs text-muted-foreground">Cost</p>
-                          <p className="font-bold">{formatCurrency(item.acquisition_cost)}</p>
+                          <p className="text-xs text-muted-foreground font-medium">Cost</p>
+                          <p className="font-bold text-lg text-[#DC143C]">{formatCurrency(item.acquisition_cost)}</p>
                           {item.quantity > 1 && (
                             <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
                           )}
@@ -194,6 +211,7 @@ export default function InventoryPage() {
                           size="sm"
                           onClick={() => handleDelete(item.id)}
                           disabled={deleteItem.isPending}
+                          className="hover:bg-destructive/10 rounded-xl"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -203,40 +221,40 @@ export default function InventoryPage() {
                 ))}
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {filteredItems.map((item) => (
-                  <Card key={item.id}>
-                    <CardContent className="flex items-center gap-4 p-4">
-                      <div className="h-20 w-14 rounded bg-muted flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+                  <Card key={item.id} className="border-none shadow-sm hover:shadow-md transition-all">
+                    <CardContent className="flex items-center gap-4 p-5">
+                      <div className="h-24 w-16 rounded-xl bg-gradient-to-br from-accent/10 to-accent/5 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
                         {item.card_image ? (
                           <Image
                             src={item.card_image}
                             alt={item.card_name}
                             fill
-                            className="object-cover"
-                            sizes="56px"
+                            className="object-contain p-1"
+                            sizes="64px"
                           />
                         ) : (
                           <p className="text-xs text-muted-foreground">No image</p>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold truncate">{item.card_name}</h3>
+                        <h3 className="font-bold truncate text-lg">{item.card_name}</h3>
                         <p className="text-sm text-muted-foreground truncate">{item.set_name || 'Unknown Set'}</p>
                         {item.quantity > 1 && (
-                          <p className="text-xs text-muted-foreground">Quantity: {item.quantity}</p>
+                          <p className="text-xs text-muted-foreground mt-1">Quantity: {item.quantity}</p>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={STATUS_COLORS[item.status]}>
+                        <Badge variant={STATUS_COLORS[item.status]} className="rounded-lg">
                           {item.status.replace('_', ' ')}
                         </Badge>
-                        <Badge variant="outline" className="gap-1">
+                        <Badge variant="outline" className="gap-1 rounded-lg">
                           <MapPin className="h-3 w-3" />
                           {item.location}
                         </Badge>
                       </div>
-                      <span className="text-lg font-bold whitespace-nowrap">
+                      <span className="text-lg font-bold whitespace-nowrap text-[#DC143C]">
                         {formatCurrency(item.acquisition_cost)}
                       </span>
                       <Button
@@ -244,6 +262,7 @@ export default function InventoryPage() {
                         size="sm"
                         onClick={() => handleDelete(item.id)}
                         disabled={deleteItem.isPending}
+                        className="hover:bg-destructive/10 rounded-xl"
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -254,17 +273,20 @@ export default function InventoryPage() {
             )}
 
             {filteredItems.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-12">
-                <div className="h-24 w-24 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <Plus className="h-12 w-12 text-muted-foreground" />
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="h-28 w-28 rounded-3xl bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center mb-6 ring-8 ring-accent/5">
+                  <Plus className="h-14 w-14 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">No inventory items found</h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <h3 className="text-2xl font-bold mb-2">No inventory items found</h3>
+                <p className="text-muted-foreground mb-6 text-center max-w-md">
                   {searchQuery || statusFilter
-                    ? 'Try adjusting your filters'
-                    : 'Get started by adding your first card'}
+                    ? 'Try adjusting your filters to see more results'
+                    : 'Get started by adding your first Pokemon card to the inventory'}
                 </p>
-                <Button onClick={() => setIsAddModalOpen(true)}>
+                <Button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="bg-gradient-to-r from-[#DC143C] to-[#FF1744] hover:shadow-lg hover:shadow-[#DC143C]/20 transition-all rounded-xl px-6"
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Card
                 </Button>

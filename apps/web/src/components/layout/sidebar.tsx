@@ -22,12 +22,7 @@ interface SidebarProps {
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Deals", href: "/deals", icon: Flame, badge: true },
-  { name: "Inventory", href: "/inventory", icon: Package, badge: true },
-  { name: "Procurement", href: "/procurement", icon: ShoppingCart, badge: true },
-  { name: "Listings", href: "/listings", icon: ListChecks, badge: true },
-  { name: "Sales", href: "/sales", icon: TrendingUp },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Inventory", href: "/inventory", icon: Package },
 ]
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -56,7 +51,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </Button>
           </div>
 
-          <nav className="flex-1 space-y-1 p-4">
+          <nav className="flex-1 space-y-2 p-4">
             {navigation.map((item) => {
               const isActive = pathname === item.href
               return (
@@ -65,17 +60,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   href={item.href}
                   onClick={() => onClose()}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all",
                     isActive
-                      ? "bg-[#DC143C] text-white"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      ? "bg-gradient-to-r from-[#DC143C] to-[#FF1744] text-white shadow-lg shadow-[#DC143C]/20"
+                      : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                   )}
                 >
                   <item.icon className="h-5 w-5" />
                   <span>{item.name}</span>
-                  {item.badge && !isActive && (
-                    <span className="ml-auto text-xs text-[#DC143C]">🔥</span>
-                  )}
                 </Link>
               )
             })}

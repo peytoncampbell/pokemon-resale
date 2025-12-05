@@ -95,66 +95,66 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-background/90 backdrop-blur-md"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden bg-background rounded-lg shadow-lg m-4 flex flex-col">
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-xl font-semibold">Add Card to Inventory</h2>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
+      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden bg-background rounded-3xl shadow-2xl m-4 flex flex-col border-none">
+        <div className="flex items-center justify-between border-b bg-gradient-to-r from-background to-accent/5 px-6 py-5">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-[#DC143C] to-[#FF1744] bg-clip-text text-transparent">Add Card to Inventory</h2>
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-xl hover:bg-accent/50">
+            <X className="h-5 w-5" />
           </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
           {!selectedCard ? (
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-6">
               <div>
-                <label className="text-sm font-medium mb-2 block">
+                <label className="text-sm font-semibold mb-3 block text-foreground">
                   {searchQuery.length > 2 ? 'Search Results' : 'Recent Pokemon Cards'}
                 </label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="text"
                     placeholder="Search by card name (e.g., Charizard)"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background px-9 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-full rounded-xl border border-input bg-background pl-11 pr-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C]/20 transition-all"
                     autoFocus
                   />
                 </div>
               </div>
 
               {isLoading && (
-                <div className="flex items-center justify-center py-8">
-                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
+                <div className="flex items-center justify-center py-12">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#DC143C] border-r-transparent"></div>
                 </div>
               )}
 
               {!isLoading && displayCards && displayCards.data.length > 0 && (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {displayCards.data.map((card) => {
                     const marketPrice = pokemonApi.getMarketPrice(card)
                     return (
                       <button
                         key={card.id}
                         onClick={() => handleCardSelect(card)}
-                        className="text-left rounded-lg border bg-card hover:bg-accent transition-colors p-3"
+                        className="text-left rounded-2xl border-none bg-gradient-to-br from-background to-accent/5 hover:shadow-md transition-all p-4 group"
                       >
-                        <div className="aspect-[3/4] bg-muted rounded mb-2 relative overflow-hidden">
+                        <div className="aspect-[3/4] bg-accent/10 rounded-xl mb-3 relative overflow-hidden">
                           <Image
                             src={card.images.small}
                             alt={card.name}
                             fill
-                            className="object-contain"
+                            className="object-contain p-2 group-hover:scale-105 transition-transform"
                             sizes="200px"
                           />
                         </div>
-                        <h3 className="font-semibold text-sm line-clamp-1">{card.name}</h3>
-                        <p className="text-xs text-muted-foreground line-clamp-1">{card.set.name}</p>
+                        <h3 className="font-bold text-sm line-clamp-1">{card.name}</h3>
+                        <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{card.set.name}</p>
                         {marketPrice && (
-                          <p className="text-sm font-bold text-primary mt-1">
+                          <p className="text-sm font-bold text-[#DC143C]">
                             ~{formatCurrency(marketPrice, 'USD')}
                           </p>
                         )}
@@ -165,28 +165,28 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
               )}
 
               {!isLoading && searchQuery.length > 2 && displayCards?.data.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground">No cards found. Try a different search.</p>
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No cards found. Try a different search.</p>
                 </div>
               )}
             </div>
           ) : (
-            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
-              <div className="flex gap-4 pb-4 border-b">
-                <div className="w-32 h-44 bg-muted rounded relative overflow-hidden flex-shrink-0">
+            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+              <div className="flex gap-6 pb-6 border-b">
+                <div className="w-36 h-48 bg-gradient-to-br from-accent/10 to-accent/5 rounded-2xl relative overflow-hidden flex-shrink-0">
                   <Image
                     src={selectedCard.images.small}
                     alt={selectedCard.name}
                     fill
-                    className="object-contain"
-                    sizes="128px"
+                    className="object-contain p-2"
+                    sizes="144px"
                   />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-lg">{selectedCard.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-2">{selectedCard.set.name}</p>
+                  <h3 className="font-bold text-xl mb-1">{selectedCard.name}</h3>
+                  <p className="text-sm text-muted-foreground mb-3">{selectedCard.set.name}</p>
                   {pokemonApi.getMarketPrice(selectedCard) && (
-                    <Badge variant="info" className="mb-2">
+                    <Badge variant="info" className="mb-3 rounded-lg">
                       Market Price: ~{formatCurrency(pokemonApi.getMarketPrice(selectedCard)!, 'USD')}
                     </Badge>
                   )}
@@ -195,20 +195,21 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => setSelectedCard(null)}
+                    className="rounded-xl"
                   >
                     Choose Different Card
                   </Button>
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">
+                  <label className="text-sm font-semibold">
                     Location <span className="text-destructive">*</span>
                   </label>
                   <select
                     {...register('location')}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C]/20 transition-all"
                   >
                     {LOCATIONS.map((location) => (
                       <option key={location} value={location}>
@@ -222,14 +223,14 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">
+                  <label className="text-sm font-semibold">
                     Quantity <span className="text-destructive">*</span>
                   </label>
                   <input
                     type="number"
                     min="1"
                     {...register('quantity', { valueAsNumber: true })}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C]/20 transition-all"
                   />
                   {errors.quantity && (
                     <p className="text-sm text-destructive">{errors.quantity.message}</p>
@@ -238,11 +239,11 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">
+                <label className="text-sm font-semibold">
                   Acquisition Cost (CAD) <span className="text-destructive">*</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">
                     $
                   </span>
                   <input
@@ -250,7 +251,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                     step="0.01"
                     placeholder="0.00"
                     {...register('acquisitionCost', { valueAsNumber: true })}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 pl-7 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-full rounded-xl border border-input bg-background px-4 py-2.5 pl-8 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C]/20 transition-all"
                   />
                 </div>
                 {errors.acquisitionCost && (
@@ -259,12 +260,12 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Notes (optional)</label>
+                <label className="text-sm font-semibold">Notes (optional)</label>
                 <textarea
                   rows={2}
                   placeholder="Add any additional notes..."
                   {...register('notes')}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                  className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C]/20 resize-none transition-all"
                 />
               </div>
 
@@ -273,11 +274,15 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                   type="button"
                   variant="outline"
                   onClick={() => setSelectedCard(null)}
-                  className="flex-1"
+                  className="flex-1 rounded-xl"
                 >
                   Back
                 </Button>
-                <Button type="submit" className="flex-1" disabled={addItem.isPending}>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-[#DC143C] to-[#FF1744] hover:shadow-lg hover:shadow-[#DC143C]/20 transition-all rounded-xl"
+                  disabled={addItem.isPending}
+                >
                   {addItem.isPending ? 'Adding...' : 'Add to Inventory'}
                 </Button>
               </div>
