@@ -4,16 +4,14 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
-  Flame,
   Package,
   ShoppingCart,
-  ListChecks,
-  TrendingUp,
-  Settings,
+  LogOut,
   X
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useAuthContext } from "@/components/providers/auth-provider"
 
 interface SidebarProps {
   isOpen: boolean
@@ -23,10 +21,16 @@ interface SidebarProps {
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Inventory", href: "/inventory", icon: Package },
+  { name: "Procurement", href: "/procurement", icon: ShoppingCart },
 ]
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
+  const { signOut, user } = useAuthContext()
+
+  const handleSignOut = async () => {
+    await signOut()
+  }
 
   return (
     <>
@@ -73,10 +77,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             })}
           </nav>
 
-          <div className="border-t p-4">
-            <div className="text-xs text-muted-foreground">
-              <p>Version 1.0.0</p>
-            </div>
+          <div className="border-t p-4 space-y-4">
+            {user && (
+              <div className="text-sm text-muted-foreground truncate">
+                {user.email}
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+              onClick={handleSignOut}
+            >
+              <LogOut className="h-5 w-5" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </aside>

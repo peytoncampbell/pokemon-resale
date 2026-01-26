@@ -12,9 +12,12 @@ import { pokemonApi, type PokemonCard } from '@/lib/pokemon-api'
 import { formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
 
+const CONDITIONS = ['NM', 'LP', 'MP', 'HP', 'DMG'] as const
+
 const addInventorySchema = z.object({
   acquisitionCost: z.number().min(0, 'Cost must be positive'),
   location: z.string().min(1, 'Location is required'),
+  condition: z.enum(CONDITIONS),
   quantity: z.number().min(1, 'Quantity must be at least 1'),
   notes: z.string().optional(),
 })
@@ -50,6 +53,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
     resolver: zodResolver(addInventorySchema),
     defaultValues: {
       location: LOCATIONS[0],
+      condition: 'NM',
       quantity: 1,
       acquisitionCost: 0,
     },
@@ -65,6 +69,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
         card_image: selectedCard.images.small,
         set_name: selectedCard.set.name,
         location: data.location,
+        condition: data.condition,
         acquisition_cost: data.acquisitionCost,
         quantity: data.quantity,
         notes: data.notes,
@@ -84,6 +89,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
     if (marketPrice) {
       reset({
         location: LOCATIONS[0],
+        condition: 'NM',
         quantity: 1,
         acquisitionCost: marketPrice,
       })
@@ -222,6 +228,27 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                   )}
                 </div>
 
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold">
+                    Condition <span className="text-destructive">*</span>
+                  </label>
+                  <select
+                    {...register('condition')}
+                    className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C]/20 transition-all"
+                  >
+                    <option value="NM">Near Mint (NM)</option>
+                    <option value="LP">Lightly Played (LP)</option>
+                    <option value="MP">Moderately Played (MP)</option>
+                    <option value="HP">Heavily Played (HP)</option>
+                    <option value="DMG">Damaged (DMG)</option>
+                  </select>
+                  {errors.condition && (
+                    <p className="text-sm text-destructive">{errors.condition.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">
                     Quantity <span className="text-destructive">*</span>

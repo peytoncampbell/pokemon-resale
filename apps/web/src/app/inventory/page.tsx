@@ -17,6 +17,14 @@ const STATUS_COLORS = {
   SOLD: 'default',
 } as const
 
+const CONDITION_LABELS = {
+  NM: 'Near Mint',
+  LP: 'Lightly Played',
+  MP: 'Moderately Played',
+  HP: 'Heavily Played',
+  DMG: 'Damaged',
+} as const
+
 export default function InventoryPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
@@ -193,6 +201,9 @@ export default function InventoryPage() {
                         <Badge variant={STATUS_COLORS[item.status]} className="rounded-lg">
                           {item.status.replace('_', ' ')}
                         </Badge>
+                        <Badge variant="outline" className="rounded-lg">
+                          {item.condition || 'NM'}
+                        </Badge>
                         <Badge variant="outline" className="gap-1 rounded-lg">
                           <MapPin className="h-3 w-3" />
                           {item.location}
@@ -248,6 +259,9 @@ export default function InventoryPage() {
                       <div className="flex items-center gap-2">
                         <Badge variant={STATUS_COLORS[item.status]} className="rounded-lg">
                           {item.status.replace('_', ' ')}
+                        </Badge>
+                        <Badge variant="outline" className="rounded-lg">
+                          {item.condition || 'NM'}
                         </Badge>
                         <Badge variant="outline" className="gap-1 rounded-lg">
                           <MapPin className="h-3 w-3" />
