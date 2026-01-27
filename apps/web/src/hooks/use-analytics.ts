@@ -1,11 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-
-async function getCurrentUserId(): Promise<string> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-  return user.id
-}
+import { getCurrentOrganizationId } from './use-organization'
 
 export interface AnalyticsSummary {
   totalInventoryValue: number
@@ -32,13 +27,29 @@ export function useAnalytics() {
   return useQuery({
     queryKey: ['analytics'],
     queryFn: async (): Promise<AnalyticsSummary> => {
-      const userId = await getCurrentUserId()
+      const orgId = await getCurrentOrganizationId()
+      
+      // Return empty analytics if no organization
+      if (!orgId) {
+        return {
+          totalInventoryValue: 0,
+          totalItems: 0,
+          totalInvested: 0,
+          itemsSold: 0,
+          totalRevenue: 0,
+          totalProfit: 0,
+          pendingProcurements: 0,
+          inventoryByStatus: { IN_STOCK: 0, LISTED: 0, SOLD: 0 },
+          inventoryByCondition: {},
+          recentActivity: [],
+        }
+      }
 
       // Get all inventory items
       const { data: inventory, error: invError } = await supabase
         .from('inventory')
         .select('*')
-        .eq('user_id', userId)
+        .eq('organization_id', orgId)
 
       if (invError) throw invError
 
@@ -46,7 +57,7 @@ export function useAnalytics() {
       const { data: sales, error: salesError } = await supabase
         .from('sales')
         .select('*')
-        .eq('user_id', userId)
+        .eq('organization_id', orgId)
 
       if (salesError) throw salesError
 
@@ -54,7 +65,7 @@ export function useAnalytics() {
       const { count: pendingProcurements, error: procError } = await supabase
         .from('procurements')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
+        .eq('organization_id', orgId)
         .eq('status', 'PENDING')
 
       if (procError) throw procError

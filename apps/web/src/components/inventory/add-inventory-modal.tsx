@@ -8,8 +8,11 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { X, Search } from 'lucide-react'
 import { useAddInventoryItem, useSearchCards, useRecentCards } from '@/hooks/use-inventory'
+import { useCheckDuplicates } from '@/hooks/use-bulk-operations'
 import { pokemonApi, type PokemonCard } from '@/lib/pokemon-api'
 import { formatCurrency } from '@/lib/utils'
+import { DuplicateWarningModal } from './duplicate-warning-modal'
+import type { InventoryItem } from '@/lib/supabase'
 import Image from 'next/image'
 
 const CONDITIONS = ['NM', 'LP', 'MP', 'HP', 'DMG'] as const
@@ -37,9 +40,13 @@ const LOCATIONS = [
 export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCard, setSelectedCard] = useState<PokemonCard | null>(null)
+  const [duplicates, setDuplicates] = useState<InventoryItem[]>([])
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false)
+  const [pendingSubmitData, setPendingSubmitData] = useState<AddInventoryForm | null>(null)
   const { data: recentCards, isLoading: isLoadingRecent } = useRecentCards()
   const { data: searchResults, isLoading: isSearching } = useSearchCards(searchQuery)
   const addItem = useAddInventoryItem()
+  const checkDuplicates = useCheckDuplicates()
 
   const displayCards = searchQuery.length > 2 ? searchResults : recentCards
   const isLoading = searchQuery.length > 2 ? isSearching : isLoadingRecent
@@ -59,27 +66,55 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
     },
   })
 
+  const performAdd = async (data: AddInventoryForm) => {
+    if (!selectedCard) return
+
+    await addItem.mutateAsync({
+      card_id: selectedCard.id,
+      card_name: selectedCard.name,
+      card_image: selectedCard.images.small,
+      set_name: selectedCard.set.name,
+      location: data.location,
+      condition: data.condition,
+      acquisition_cost: data.acquisitionCost,
+      quantity: data.quantity,
+      notes: data.notes,
+    })
+    reset()
+    setSelectedCard(null)
+    setSearchQuery('')
+    setDuplicates([])
+    setPendingSubmitData(null)
+    onClose()
+  }
+
   const onSubmit = async (data: AddInventoryForm) => {
     if (!selectedCard) return
 
     try {
-      await addItem.mutateAsync({
-        card_id: selectedCard.id,
-        card_name: selectedCard.name,
-        card_image: selectedCard.images.small,
-        set_name: selectedCard.set.name,
-        location: data.location,
-        condition: data.condition,
-        acquisition_cost: data.acquisitionCost,
-        quantity: data.quantity,
-        notes: data.notes,
-      })
-      reset()
-      setSelectedCard(null)
-      setSearchQuery('')
-      onClose()
+      const existingItems = await checkDuplicates.mutateAsync(selectedCard.id)
+
+      if (existingItems.length > 0) {
+        setDuplicates(existingItems)
+        setPendingSubmitData(data)
+        setShowDuplicateWarning(true)
+        return
+      }
+
+      await performAdd(data)
     } catch (error) {
       console.error('Failed to add inventory item:', error)
+    }
+  }
+
+  const handleDuplicateContinue = async () => {
+    setShowDuplicateWarning(false)
+    if (pendingSubmitData) {
+      try {
+        await performAdd(pendingSubmitData)
+      } catch (error) {
+        console.error('Failed to add inventory item:', error)
+      }
     }
   }
 
@@ -317,6 +352,17 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
           )}
         </div>
       </div>
+
+      <DuplicateWarningModal
+        open={showDuplicateWarning}
+        onClose={() => {
+          setShowDuplicateWarning(false)
+          setPendingSubmitData(null)
+        }}
+        onContinue={handleDuplicateContinue}
+        duplicates={duplicates}
+        cardName={selectedCard?.name || ''}
+      />
     </div>
   )
 }

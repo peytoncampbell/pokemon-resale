@@ -38,18 +38,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+    <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xl">
-              PR
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl icon-bg-blue text-white font-bold text-xl shadow-lg shadow-vision-blue/30">
+              P
             </div>
           </div>
-          <CardTitle className="text-2xl text-center">
+          <CardTitle className="text-2xl text-center text-white">
             {isSignUp ? 'Create an account' : 'Welcome back'}
           </CardTitle>
-          <CardDescription className="text-center">
+          <CardDescription className="text-center text-white/60">
             {isSignUp
               ? 'Enter your email to create your account'
               : 'Enter your credentials to access your inventory'}
@@ -58,16 +58,16 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && (
-              <div className={`rounded-md p-3 text-sm ${
+              <div className={`rounded-xl p-3 text-sm ${
                 error.includes('Check your email') 
-                  ? 'bg-green-50 text-green-800 border border-green-200'
-                  : 'bg-red-50 text-red-800 border border-red-200'
+                  ? 'bg-vision-green/10 text-vision-green border border-vision-green/20'
+                  : 'bg-red-500/10 text-red-400 border border-red-500/20'
               }`}>
                 {error}
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-white/80">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -79,7 +79,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-white/80">Password</Label>
               <Input
                 id="password"
                 type="password"

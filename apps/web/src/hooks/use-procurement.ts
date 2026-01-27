@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase, Procurement, ProcurementInsert } from '@/lib/supabase'
+import { getCurrentOrganizationId } from './use-organization'
 
 export type { Procurement }
 
@@ -35,12 +36,13 @@ export function useProcurements(statusFilter?: string) {
   return useQuery({
     queryKey: ['procurements', statusFilter],
     queryFn: async () => {
-      const userId = await getCurrentUserId()
+      const orgId = await getCurrentOrganizationId()
+      if (!orgId) return []
       
       let query = supabase
         .from('procurements')
         .select('*')
-        .eq('user_id', userId)
+        .eq('organization_id', orgId)
         .order('created_at', { ascending: false })
 
       if (statusFilter) {
@@ -60,13 +62,14 @@ export function useProcurement(id: string) {
   return useQuery({
     queryKey: ['procurements', id],
     queryFn: async () => {
-      const userId = await getCurrentUserId()
+      const orgId = await getCurrentOrganizationId()
+      if (!orgId) throw new Error('No organization')
       
       const { data, error } = await supabase
         .from('procurements')
         .select('*')
         .eq('id', id)
-        .eq('user_id', userId)
+        .eq('organization_id', orgId)
         .single()
 
       if (error) throw error
@@ -81,12 +84,13 @@ export function useProcurementItems(procurementId: string) {
   return useQuery({
     queryKey: ['procurements', procurementId, 'items'],
     queryFn: async () => {
-      const userId = await getCurrentUserId()
+      const orgId = await getCurrentOrganizationId()
+      if (!orgId) return []
       
       const { data, error } = await supabase
         .from('inventory')
         .select('*')
-        .eq('user_id', userId)
+        .eq('organization_id', orgId)
         .eq('procurement_id', procurementId)
         .order('created_at', { ascending: false })
 
@@ -104,11 +108,14 @@ export function useAddProcurement() {
   return useMutation({
     mutationFn: async (data: AddProcurementData) => {
       const userId = await getCurrentUserId()
+      const orgId = await getCurrentOrganizationId()
+      if (!orgId) throw new Error('No organization')
       
       const total = (data.subtotal || 0) + (data.shipping || 0) + (data.fees || 0)
       
       const insertData: ProcurementInsert = {
         user_id: userId,
+        organization_id: orgId,
         supplier: data.supplier,
         order_date: data.order_date,
         subtotal: data.subtotal || 0,
@@ -140,7 +147,8 @@ export function useUpdateProcurement() {
 
   return useMutation({
     mutationFn: async (data: UpdateProcurementData) => {
-      const userId = await getCurrentUserId()
+      const orgId = await getCurrentOrganizationId()
+      if (!orgId) throw new Error('No organization')
       const { id, ...updateData } = data
       
       // Recalculate total if any cost fields changed
@@ -163,7 +171,7 @@ export function useUpdateProcurement() {
         .from('procurements')
         .update(updateData)
         .eq('id', id)
-        .eq('user_id', userId)
+        .eq('organization_id', orgId)
         .select()
         .single()
 
@@ -182,20 +190,21 @@ export function useDeleteProcurement() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const userId = await getCurrentUserId()
+      const orgId = await getCurrentOrganizationId()
+      if (!orgId) throw new Error('No organization')
       
       // First unlink any inventory items
       await supabase
         .from('inventory')
         .update({ procurement_id: null })
         .eq('procurement_id', id)
-        .eq('user_id', userId)
+        .eq('organization_id', orgId)
       
       const { error } = await supabase
         .from('procurements')
         .delete()
         .eq('id', id)
-        .eq('user_id', userId)
+        .eq('organization_id', orgId)
 
       if (error) throw error
     },

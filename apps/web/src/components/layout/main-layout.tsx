@@ -10,15 +10,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-background">
-        <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+      <div className="min-h-screen">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        <main className="md:pl-64 pt-16">
-          <div className="container mx-auto p-4 md:p-6 lg:p-8">
+        <div className="md:pl-[280px]">
+          <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+          <main className="p-4 md:p-6 lg:p-8">
             {children}
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     </AuthGuard>
   )
