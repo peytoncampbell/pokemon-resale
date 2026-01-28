@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { supabase, InventoryItem, Sale } from '@/lib/supabase'
 import { getCurrentOrganizationId } from './use-organization'
 
 export interface AnalyticsSummary {
@@ -46,20 +46,22 @@ export function useAnalytics() {
       }
 
       // Get all inventory items
-      const { data: inventory, error: invError } = await supabase
+      const { data: inventoryData, error: invError } = await supabase
         .from('inventory')
         .select('*')
         .eq('organization_id', orgId)
 
       if (invError) throw invError
+      const inventory = inventoryData as InventoryItem[] | null
 
       // Get all sales
-      const { data: sales, error: salesError } = await supabase
+      const { data: salesData, error: salesError } = await supabase
         .from('sales')
         .select('*')
         .eq('organization_id', orgId)
 
       if (salesError) throw salesError
+      const sales = salesData as Sale[] | null
 
       // Get pending procurements count
       const { count: pendingProcurements, error: procError } = await supabase
