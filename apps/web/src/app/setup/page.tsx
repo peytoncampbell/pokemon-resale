@@ -64,8 +64,11 @@ export default function SetupPage() {
     try {
       await createOrg.mutateAsync(orgName.trim())
       router.push('/')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create organization')
+    } catch (err: any) {
+      console.error('Organization creation error:', err)
+      // Show the actual error message from Supabase
+      const errorMessage = err?.message || err?.error?.message || 'Failed to create organization'
+      setError(errorMessage)
     }
   }
 

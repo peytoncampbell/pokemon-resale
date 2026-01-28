@@ -1,0 +1,3 @@
+module.exports=[67722,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(52918);a.n(d("[project]/personal/resale/pokemon-resale/apps/web/node_modules/next/dist/client/components/builtin/global-error.js <module evaluation>"))},46680,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(52918);a.n(d("[project]/personal/resale/pokemon-resale/apps/web/node_modules/next/dist/client/components/builtin/global-error.js"))},88704,a=>{"use strict";a.i(67722);var b=a.i(46680);a.n(b)}];
+
+//# sourceMappingURL=73530_next_dist_client_components_builtin_global-error_6cb90a3a.js.map

@@ -115,18 +115,50 @@ export function useCreateOrganization() {
     mutationFn: async (name: string) => {
       const userId = await getCurrentUserId()
       
-      // Create the organization
-      const { data: org, error: orgError } = await supabase
-        .from('organizations')
-        .insert({
-          name,
-          invite_code: generateInviteCode(),
-          created_by: userId,
-        })
-        .select()
-        .single()
+      // Generate a unique invite code (retry if collision)
+      let inviteCode = generateInviteCode()
+      let attempts = 0
+      const maxAttempts = 10
       
-      if (orgError) throw orgError
+      // Create the organization
+      let orgError: any = null
+      let org: any = null
+      
+      while (attempts < maxAttempts) {
+        const { data, error } = await supabase
+          .from('organizations')
+          .insert({
+            name,
+            invite_code: inviteCode,
+            created_by: userId,
+          })
+          .select()
+          .single()
+        
+        if (!error) {
+          org = data
+          break
+        }
+        
+        // If it's a unique constraint violation, try a new code
+        if (error.code === '23505' || error.message?.includes('unique') || error.message?.includes('duplicate')) {
+          inviteCode = generateInviteCode()
+          attempts++
+          continue
+        }
+        
+        orgError = error
+        break
+      }
+      
+      if (orgError) {
+        console.error('Error creating organization:', orgError)
+        throw new Error(orgError.message || 'Failed to create organization')
+      }
+      
+      if (!org) {
+        throw new Error('Failed to create organization after multiple attempts')
+      }
       
       // Add creator as first member
       const { error: memberError } = await supabase
@@ -136,7 +168,12 @@ export function useCreateOrganization() {
           user_id: userId,
         })
       
-      if (memberError) throw memberError
+      if (memberError) {
+        console.error('Error adding creator as member:', memberError)
+        // Try to clean up the organization if member insert fails
+        await supabase.from('organizations').delete().eq('id', org.id)
+        throw new Error(memberError.message || 'Failed to add you as a member')
+      }
       
       return org as Organization
     },

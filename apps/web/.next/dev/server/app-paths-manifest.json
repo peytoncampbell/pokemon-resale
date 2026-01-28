@@ -1,4 +1,4 @@
 {
-  "/page": "app/page.js",
-  "/setup/page": "app/setup/page.js"
+  "/api/justtcg/[...path]/route": "app/api/justtcg/[...path]/route.js",
+  "/inventory/page": "app/inventory/page.js"
 }

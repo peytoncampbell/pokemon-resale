@@ -54,6 +54,7 @@ CREATE POLICY IF NOT EXISTS "Allow public delete access"
 CREATE INDEX IF NOT EXISTS inventory_status_idx ON inventory(status);
 CREATE INDEX IF NOT EXISTS inventory_location_idx ON inventory(location);
 CREATE INDEX IF NOT EXISTS inventory_created_at_idx ON inventory(created_at DESC);
+CREATE INDEX IF NOT EXISTS inventory_game_type_idx ON inventory(game_type);
 
 -- ============================================
 -- Migration 2: Add Authentication, Procurements, and Sales
@@ -78,7 +79,8 @@ CREATE TABLE IF NOT EXISTS procurements (
 ALTER TABLE inventory 
   ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   ADD COLUMN IF NOT EXISTS condition text DEFAULT 'NM' CHECK (condition IN ('NM', 'LP', 'MP', 'HP', 'DMG')),
-  ADD COLUMN IF NOT EXISTS procurement_id uuid REFERENCES procurements(id) ON DELETE SET NULL;
+  ADD COLUMN IF NOT EXISTS procurement_id uuid REFERENCES procurements(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS game_type text NOT NULL DEFAULT 'pokemon' CHECK (game_type IN ('pokemon', 'onepiece'));
 
 -- Create sales table
 CREATE TABLE IF NOT EXISTS sales (
@@ -234,8 +236,11 @@ CREATE POLICY IF NOT EXISTS "Users can view organizations they are members of"
   ON organizations FOR SELECT
   TO authenticated
   USING (
+    -- Allow creators to see their org (needed before membership is inserted)
+    created_by = auth.uid()
+    OR
     id IN (
-      SELECT organization_id FROM organization_members 
+      SELECT organization_id FROM organization_members
       WHERE user_id = auth.uid()
     )
   );
@@ -249,47 +254,62 @@ CREATE POLICY IF NOT EXISTS "Members can update their organization"
   ON organizations FOR UPDATE
   TO authenticated
   USING (
+    created_by = auth.uid()
+    OR
     id IN (
-      SELECT organization_id FROM organization_members 
+      SELECT organization_id FROM organization_members
       WHERE user_id = auth.uid()
     )
   );
+
+-- Create a security definer function to check membership without triggering RLS recursion
+-- This must be created BEFORE the policies that use it
+CREATE OR REPLACE FUNCTION check_organization_membership(org_id uuid, check_user_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+BEGIN
+  -- This function bypasses RLS, so we can check membership safely
+  RETURN EXISTS (
+    SELECT 1 FROM organization_members 
+    WHERE organization_id = org_id 
+      AND user_id = check_user_id
+  );
+END;
+$$;
 
 -- RLS Policies for organization_members table
 CREATE POLICY IF NOT EXISTS "Users can view members of their organizations"
   ON organization_members FOR SELECT
   TO authenticated
   USING (
-    organization_id IN (
-      SELECT organization_id FROM organization_members 
-      WHERE user_id = auth.uid()
-    )
+    -- Use the function to check membership without recursion
+    check_organization_membership(organization_id, auth.uid())
   );
 
 CREATE POLICY IF NOT EXISTS "Members can add new members to their organization"
   ON organization_members FOR INSERT
   TO authenticated
   WITH CHECK (
+    -- Allow if user is the creator of the organization (for first member)
+    -- This check comes first and doesn't query organization_members
     organization_id IN (
-      SELECT organization_id FROM organization_members 
-      WHERE user_id = auth.uid()
+      SELECT id FROM organizations 
+      WHERE created_by = auth.uid()
     )
     OR 
-    -- Allow first member (creator) to add themselves
-    NOT EXISTS (
-      SELECT 1 FROM organization_members om 
-      WHERE om.organization_id = organization_members.organization_id
-    )
+    -- Allow if user is already a member (using function to avoid recursion)
+    check_organization_membership(organization_id, auth.uid())
   );
 
 CREATE POLICY IF NOT EXISTS "Members can remove members from their organization"
   ON organization_members FOR DELETE
   TO authenticated
   USING (
-    organization_id IN (
-      SELECT organization_id FROM organization_members 
-      WHERE user_id = auth.uid()
-    )
+    check_organization_membership(organization_id, auth.uid())
   );
 
 -- RLS Policies for organization_invites table

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { X, Search } from 'lucide-react'
 import { useAddInventoryItem, useSearchCards, useRecentCards } from '@/hooks/use-inventory'
 import { useCheckDuplicates } from '@/hooks/use-bulk-operations'
-import { pokemonApi, type PokemonCard } from '@/lib/pokemon-api'
+import type { GameType, UnifiedCard } from '@/lib/card-types'
 import { formatCurrency } from '@/lib/utils'
 import { DuplicateWarningModal } from './duplicate-warning-modal'
 import type { InventoryItem } from '@/lib/supabase'
@@ -37,14 +37,20 @@ const LOCATIONS = [
   'BIN-06', 'BIN-07', 'BIN-08', 'BIN-09', 'BIN-10',
 ]
 
+const GAME_TYPES: { value: GameType; label: string }[] = [
+  { value: 'pokemon', label: 'Pokemon' },
+  { value: 'onepiece', label: 'One Piece' },
+]
+
 export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCard, setSelectedCard] = useState<PokemonCard | null>(null)
+  const [gameType, setGameType] = useState<GameType>('pokemon')
+  const [selectedCard, setSelectedCard] = useState<UnifiedCard | null>(null)
   const [duplicates, setDuplicates] = useState<InventoryItem[]>([])
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false)
   const [pendingSubmitData, setPendingSubmitData] = useState<AddInventoryForm | null>(null)
-  const { data: recentCards, isLoading: isLoadingRecent } = useRecentCards()
-  const { data: searchResults, isLoading: isSearching } = useSearchCards(searchQuery)
+  const { data: recentCards, isLoading: isLoadingRecent } = useRecentCards(gameType)
+  const { data: searchResults, isLoading: isSearching } = useSearchCards(searchQuery, gameType)
   const addItem = useAddInventoryItem()
   const checkDuplicates = useCheckDuplicates()
 
@@ -72,13 +78,14 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
     await addItem.mutateAsync({
       card_id: selectedCard.id,
       card_name: selectedCard.name,
-      card_image: selectedCard.images.small,
-      set_name: selectedCard.set.name,
+      card_image: selectedCard.imageSmall,
+      set_name: selectedCard.setName,
       location: data.location,
       condition: data.condition,
       acquisition_cost: data.acquisitionCost,
       quantity: data.quantity,
       notes: data.notes,
+      game_type: selectedCard.gameType,
     })
     reset()
     setSelectedCard(null)
@@ -118,17 +125,22 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
     }
   }
 
-  const handleCardSelect = (card: PokemonCard) => {
+  const handleCardSelect = (card: UnifiedCard) => {
     setSelectedCard(card)
-    const marketPrice = pokemonApi.getMarketPrice(card)
-    if (marketPrice) {
+    if (card.marketPrice) {
       reset({
         location: LOCATIONS[0],
         condition: 'NM',
         quantity: 1,
-        acquisitionCost: marketPrice,
+        acquisitionCost: card.marketPrice,
       })
     }
+  }
+
+  const handleGameTypeChange = (newGameType: GameType) => {
+    setGameType(newGameType)
+    setSearchQuery('')
+    setSelectedCard(null)
   }
 
   if (!open) return null
@@ -150,9 +162,26 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
         <div className="flex-1 overflow-y-auto">
           {!selectedCard ? (
             <div className="p-6 space-y-6">
+              <div className="flex gap-2 mb-4">
+                {GAME_TYPES.map((gt) => (
+                  <button
+                    key={gt.value}
+                    type="button"
+                    onClick={() => handleGameTypeChange(gt.value)}
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                      gameType === gt.value
+                        ? 'bg-gradient-to-r from-[#DC143C] to-[#FF1744] text-white shadow-md'
+                        : 'bg-accent/10 text-muted-foreground hover:bg-accent/20'
+                    }`}
+                  >
+                    {gt.label}
+                  </button>
+                ))}
+              </div>
+
               <div>
                 <label className="text-sm font-semibold mb-3 block text-foreground">
-                  {searchQuery.length > 2 ? 'Search Results' : 'Recent Pokemon Cards'}
+                  {searchQuery.length > 2 ? 'Search Results' : `Recent ${gameType === 'pokemon' ? 'Pokemon' : 'One Piece'} Cards`}
                 </label>
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -175,33 +204,30 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
 
               {!isLoading && displayCards && displayCards.data.length > 0 && (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {displayCards.data.map((card) => {
-                    const marketPrice = pokemonApi.getMarketPrice(card)
-                    return (
-                      <button
-                        key={card.id}
-                        onClick={() => handleCardSelect(card)}
-                        className="text-left rounded-2xl border-none bg-gradient-to-br from-background to-accent/5 hover:shadow-md transition-all p-4 group"
-                      >
-                        <div className="aspect-[3/4] bg-accent/10 rounded-xl mb-3 relative overflow-hidden">
-                          <Image
-                            src={card.images.small}
-                            alt={card.name}
-                            fill
-                            className="object-contain p-2 group-hover:scale-105 transition-transform"
-                            sizes="200px"
-                          />
-                        </div>
-                        <h3 className="font-bold text-sm line-clamp-1">{card.name}</h3>
-                        <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{card.set.name}</p>
-                        {marketPrice && (
-                          <p className="text-sm font-bold text-[#DC143C]">
-                            ~{formatCurrency(marketPrice, 'USD')}
-                          </p>
-                        )}
-                      </button>
-                    )
-                  })}
+                  {displayCards.data.map((card) => (
+                    <button
+                      key={card.id}
+                      onClick={() => handleCardSelect(card)}
+                      className="text-left rounded-2xl border-none bg-gradient-to-br from-background to-accent/5 hover:shadow-md transition-all p-4 group"
+                    >
+                      <div className="aspect-[3/4] bg-accent/10 rounded-xl mb-3 relative overflow-hidden">
+                        <Image
+                          src={card.imageSmall}
+                          alt={card.name}
+                          fill
+                          className="object-contain p-2 group-hover:scale-105 transition-transform"
+                          sizes="200px"
+                        />
+                      </div>
+                      <h3 className="font-bold text-sm line-clamp-1">{card.name}</h3>
+                      <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{card.setName}</p>
+                      {card.marketPrice && (
+                        <p className="text-sm font-bold text-[#DC143C]">
+                          ~{formatCurrency(card.marketPrice, 'USD')}
+                        </p>
+                      )}
+                    </button>
+                  ))}
                 </div>
               )}
 
@@ -216,7 +242,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
               <div className="flex gap-6 pb-6 border-b">
                 <div className="w-36 h-48 bg-gradient-to-br from-accent/10 to-accent/5 rounded-2xl relative overflow-hidden flex-shrink-0">
                   <Image
-                    src={selectedCard.images.small}
+                    src={selectedCard.imageSmall}
                     alt={selectedCard.name}
                     fill
                     className="object-contain p-2"
@@ -225,10 +251,10 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-xl mb-1">{selectedCard.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">{selectedCard.set.name}</p>
-                  {pokemonApi.getMarketPrice(selectedCard) && (
+                  <p className="text-sm text-muted-foreground mb-3">{selectedCard.setName}</p>
+                  {selectedCard.marketPrice && (
                     <Badge variant="info" className="mb-3 rounded-lg">
-                      Market Price: ~{formatCurrency(pokemonApi.getMarketPrice(selectedCard)!, 'USD')}
+                      Market Price: ~{formatCurrency(selectedCard.marketPrice, 'USD')}
                     </Badge>
                   )}
                   <Button

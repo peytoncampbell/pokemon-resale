@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase, InventoryItem, InventoryInsert } from '@/lib/supabase'
-import { pokemonApi } from '@/lib/pokemon-api'
+import { cardApi } from '@/lib/card-api'
+import type { GameType } from '@/lib/card-types'
 import { getCurrentOrganizationId } from './use-organization'
 
 export type { InventoryItem }
@@ -17,6 +18,7 @@ export interface AddInventoryData {
   status?: 'IN_STOCK' | 'LISTED' | 'SOLD'
   notes?: string
   procurement_id?: string
+  game_type?: 'pokemon' | 'onepiece'
 }
 
 export interface UpdateInventoryData {
@@ -107,6 +109,7 @@ export function useAddInventoryItem() {
         status: data.status || 'IN_STOCK',
         notes: data.notes || null,
         procurement_id: data.procurement_id || null,
+        game_type: data.game_type || 'pokemon',
       }
 
       const { data: result, error } = await supabase
@@ -174,17 +177,17 @@ export function useDeleteInventoryItem() {
   })
 }
 
-export function useRecentCards() {
+export function useRecentCards(gameType: GameType = 'pokemon') {
   return useQuery({
-    queryKey: ['pokemon', 'recent'],
-    queryFn: () => pokemonApi.getRecentCards(),
+    queryKey: ['cards', 'recent', gameType],
+    queryFn: () => cardApi.getRecentCards(gameType),
   })
 }
 
-export function useSearchCards(query: string) {
+export function useSearchCards(query: string, gameType: GameType = 'pokemon') {
   return useQuery({
-    queryKey: ['pokemon', 'search', query],
-    queryFn: () => pokemonApi.searchCards(query),
+    queryKey: ['cards', 'search', query, gameType],
+    queryFn: () => cardApi.searchCards(query, gameType),
     enabled: query.length > 2,
   })
 }

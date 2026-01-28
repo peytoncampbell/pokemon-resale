@@ -380,19 +380,50 @@ function useCreateOrganization() {
     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f40$tanstack$2f$react$2d$query$2f$build$2f$modern$2f$useMutation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useMutation"])({
         mutationFn: async (name)=>{
             const userId = await getCurrentUserId();
+            // Generate a unique invite code (retry if collision)
+            let inviteCode = generateInviteCode();
+            let attempts = 0;
+            const maxAttempts = 10;
             // Create the organization
-            const { data: org, error: orgError } = await __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$lib$2f$supabase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["supabase"].from('organizations').insert({
-                name,
-                invite_code: generateInviteCode(),
-                created_by: userId
-            }).select().single();
-            if (orgError) throw orgError;
+            let orgError = null;
+            let org = null;
+            while(attempts < maxAttempts){
+                const { data, error } = await __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$lib$2f$supabase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["supabase"].from('organizations').insert({
+                    name,
+                    invite_code: inviteCode,
+                    created_by: userId
+                }).select().single();
+                if (!error) {
+                    org = data;
+                    break;
+                }
+                // If it's a unique constraint violation, try a new code
+                if (error.code === '23505' || error.message?.includes('unique') || error.message?.includes('duplicate')) {
+                    inviteCode = generateInviteCode();
+                    attempts++;
+                    continue;
+                }
+                orgError = error;
+                break;
+            }
+            if (orgError) {
+                console.error('Error creating organization:', orgError);
+                throw new Error(orgError.message || 'Failed to create organization');
+            }
+            if (!org) {
+                throw new Error('Failed to create organization after multiple attempts');
+            }
             // Add creator as first member
             const { error: memberError } = await __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$lib$2f$supabase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["supabase"].from('organization_members').insert({
                 organization_id: org.id,
                 user_id: userId
             });
-            if (memberError) throw memberError;
+            if (memberError) {
+                console.error('Error adding creator as member:', memberError);
+                // Try to clean up the organization if member insert fails
+                await __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$lib$2f$supabase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["supabase"].from('organizations').delete().eq('id', org.id);
+                throw new Error(memberError.message || 'Failed to add you as a member');
+            }
             return org;
         },
         onSuccess: ()=>{
@@ -675,7 +706,10 @@ function SetupPage() {
             await createOrg.mutateAsync(orgName.trim());
             router.push('/');
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to create organization');
+            console.error('Organization creation error:', err);
+            // Show the actual error message from Supabase
+            const errorMessage = err?.message || err?.error?.message || 'Failed to create organization';
+            setError(errorMessage);
         }
     };
     const handleJoinOrg = async (e)=>{
@@ -708,12 +742,12 @@ function SetupPage() {
                                     children: "P"
                                 }, void 0, false, {
                                     fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                    lineNumber: 95,
+                                    lineNumber: 98,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                lineNumber: 94,
+                                lineNumber: 97,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
@@ -721,7 +755,7 @@ function SetupPage() {
                                 children: "Welcome to Pokemon Resale"
                             }, void 0, false, {
                                 fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                lineNumber: 99,
+                                lineNumber: 102,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -729,13 +763,13 @@ function SetupPage() {
                                 children: user?.email ? `Signed in as ${user.email}` : 'Get started by creating or joining an organization'
                             }, void 0, false, {
                                 fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                lineNumber: 100,
+                                lineNumber: 103,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                        lineNumber: 93,
+                        lineNumber: 96,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -753,12 +787,12 @@ function SetupPage() {
                                                 className: "h-8 w-8 text-white"
                                             }, void 0, false, {
                                                 fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                                lineNumber: 112,
+                                                lineNumber: 115,
                                                 columnNumber: 19
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 111,
+                                            lineNumber: 114,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -766,7 +800,7 @@ function SetupPage() {
                                             children: "Create Organization"
                                         }, void 0, false, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 114,
+                                            lineNumber: 117,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -774,7 +808,7 @@ function SetupPage() {
                                             children: "Start a new business and invite your team members to collaborate"
                                         }, void 0, false, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 115,
+                                            lineNumber: 118,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -786,24 +820,24 @@ function SetupPage() {
                                                     className: "ml-2 h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                                    lineNumber: 119,
+                                                    lineNumber: 122,
                                                     columnNumber: 30
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 118,
+                                            lineNumber: 121,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                    lineNumber: 110,
+                                    lineNumber: 113,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                lineNumber: 106,
+                                lineNumber: 109,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
@@ -818,12 +852,12 @@ function SetupPage() {
                                                 className: "h-8 w-8 text-white"
                                             }, void 0, false, {
                                                 fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                                lineNumber: 130,
+                                                lineNumber: 133,
                                                 columnNumber: 19
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 129,
+                                            lineNumber: 132,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -831,7 +865,7 @@ function SetupPage() {
                                             children: "Join Organization"
                                         }, void 0, false, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 132,
+                                            lineNumber: 135,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -839,7 +873,7 @@ function SetupPage() {
                                             children: "Enter an invite code to join an existing team"
                                         }, void 0, false, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 133,
+                                            lineNumber: 136,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -851,41 +885,41 @@ function SetupPage() {
                                                     className: "ml-2 h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                                    lineNumber: 137,
+                                                    lineNumber: 140,
                                                     columnNumber: 33
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 136,
+                                            lineNumber: 139,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                    lineNumber: 128,
+                                    lineNumber: 131,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                lineNumber: 124,
+                                lineNumber: 127,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                        lineNumber: 105,
+                        lineNumber: 108,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                lineNumber: 92,
+                lineNumber: 95,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-            lineNumber: 91,
+            lineNumber: 94,
             columnNumber: 7
         }, this);
     }
@@ -902,7 +936,7 @@ function SetupPage() {
                                 children: "Create Organization"
                             }, void 0, false, {
                                 fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                lineNumber: 152,
+                                lineNumber: 155,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardDescription"], {
@@ -910,13 +944,13 @@ function SetupPage() {
                                 children: "Give your business a name. You can change this later."
                             }, void 0, false, {
                                 fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                lineNumber: 153,
+                                lineNumber: 156,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                        lineNumber: 151,
+                        lineNumber: 154,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("form", {
@@ -929,7 +963,7 @@ function SetupPage() {
                                     children: error
                                 }, void 0, false, {
                                     fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                    lineNumber: 160,
+                                    lineNumber: 163,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -940,7 +974,7 @@ function SetupPage() {
                                             children: "Organization Name"
                                         }, void 0, false, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 165,
+                                            lineNumber: 168,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -951,13 +985,13 @@ function SetupPage() {
                                             disabled: createOrg.isPending
                                         }, void 0, false, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 166,
+                                            lineNumber: 169,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                    lineNumber: 164,
+                                    lineNumber: 167,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -972,7 +1006,7 @@ function SetupPage() {
                                             children: "Back"
                                         }, void 0, false, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 175,
+                                            lineNumber: 178,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -985,7 +1019,7 @@ function SetupPage() {
                                                         className: "mr-2 h-4 w-4 animate-spin"
                                                     }, void 0, false, {
                                                         fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                                        lineNumber: 191,
+                                                        lineNumber: 194,
                                                         columnNumber: 23
                                                     }, this),
                                                     "Creating..."
@@ -993,35 +1027,35 @@ function SetupPage() {
                                             }, void 0, true) : 'Create Organization'
                                         }, void 0, false, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 184,
+                                            lineNumber: 187,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                    lineNumber: 174,
+                                    lineNumber: 177,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                            lineNumber: 158,
+                            lineNumber: 161,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                        lineNumber: 157,
+                        lineNumber: 160,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                lineNumber: 150,
+                lineNumber: 153,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-            lineNumber: 149,
+            lineNumber: 152,
             columnNumber: 7
         }, this);
     }
@@ -1038,7 +1072,7 @@ function SetupPage() {
                                 children: "Join Organization"
                             }, void 0, false, {
                                 fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                lineNumber: 211,
+                                lineNumber: 214,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardDescription"], {
@@ -1046,13 +1080,13 @@ function SetupPage() {
                                 children: "Enter the invite code you received from your team"
                             }, void 0, false, {
                                 fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                lineNumber: 212,
+                                lineNumber: 215,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                        lineNumber: 210,
+                        lineNumber: 213,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("form", {
@@ -1065,7 +1099,7 @@ function SetupPage() {
                                     children: error
                                 }, void 0, false, {
                                     fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                    lineNumber: 219,
+                                    lineNumber: 222,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1076,7 +1110,7 @@ function SetupPage() {
                                             children: "Invite Code"
                                         }, void 0, false, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 224,
+                                            lineNumber: 227,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -1089,13 +1123,13 @@ function SetupPage() {
                                             maxLength: 8
                                         }, void 0, false, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 225,
+                                            lineNumber: 228,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                    lineNumber: 223,
+                                    lineNumber: 226,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1110,7 +1144,7 @@ function SetupPage() {
                                             children: "Back"
                                         }, void 0, false, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 236,
+                                            lineNumber: 239,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -1123,7 +1157,7 @@ function SetupPage() {
                                                         className: "mr-2 h-4 w-4 animate-spin"
                                                     }, void 0, false, {
                                                         fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                                        lineNumber: 252,
+                                                        lineNumber: 255,
                                                         columnNumber: 23
                                                     }, this),
                                                     "Joining..."
@@ -1131,35 +1165,35 @@ function SetupPage() {
                                             }, void 0, true) : 'Join Organization'
                                         }, void 0, false, {
                                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                            lineNumber: 245,
+                                            lineNumber: 248,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                                    lineNumber: 235,
+                                    lineNumber: 238,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                            lineNumber: 217,
+                            lineNumber: 220,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                        lineNumber: 216,
+                        lineNumber: 219,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-                lineNumber: 209,
+                lineNumber: 212,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page.tsx",
-            lineNumber: 208,
+            lineNumber: 211,
             columnNumber: 7
         }, this);
     }

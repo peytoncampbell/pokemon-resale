@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { getCurrentOrganizationId } from './use-organization'
-import { pokemonApi } from '@/lib/pokemon-api'
+import { cardApi } from '@/lib/card-api'
+import type { GameType } from '@/lib/card-types'
 
 export interface PriceComparison {
   card_id: string
@@ -84,7 +85,7 @@ export function usePriceComparisons() {
 
       const { data: inventory, error } = await supabase
         .from('inventory')
-        .select('id, card_id, card_name, acquisition_cost')
+        .select('id, card_id, card_name, acquisition_cost, game_type')
         .eq('organization_id', orgId)
         .in('status', ['IN_STOCK', 'LISTED'])
 
@@ -124,18 +125,23 @@ export function usePriceComparisons() {
   })
 }
 
+export interface RefreshPriceItem {
+  cardId: string
+  gameType: GameType
+}
+
 export function useRefreshPrices() {
   const queryClient = useQueryClient()
   const recordPrice = useRecordPrice()
 
   return useMutation({
-    mutationFn: async (cardIds: string[]) => {
+    mutationFn: async (items: RefreshPriceItem[]) => {
       const results = await Promise.allSettled(
-        cardIds.map(async (cardId) => {
-          const card = await pokemonApi.getCard(cardId)
+        items.map(async ({ cardId, gameType }) => {
+          const card = await cardApi.getCard(cardId, gameType)
           if (!card) throw new Error(`Card not found: ${cardId}`)
 
-          const marketPrice = pokemonApi.getMarketPrice(card)
+          const marketPrice = card.marketPrice
           if (!marketPrice) throw new Error(`No market price for: ${cardId}`)
 
           return recordPrice.mutateAsync({

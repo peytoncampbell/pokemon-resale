@@ -13103,6 +13103,11 @@ const configEnv = ("TURBOPACK compile-time value", {
             "protocol": ("TURBOPACK compile-time value", "https"),
             "hostname": ("TURBOPACK compile-time value", "images.pokemontcg.io"),
             "pathname": ("TURBOPACK compile-time value", "/**")
+        }),
+        ("TURBOPACK compile-time value", {
+            "protocol": ("TURBOPACK compile-time value", "https"),
+            "hostname": ("TURBOPACK compile-time value", "tcgplayer-cdn.tcgplayer.com"),
+            "pathname": ("TURBOPACK compile-time value", "/**")
         })
     ]),
     "localPatterns": ("TURBOPACK compile-time value", [
@@ -13461,6 +13466,11 @@ function getImageProps(imgProps) {
                 ("TURBOPACK compile-time value", {
                     "protocol": ("TURBOPACK compile-time value", "https"),
                     "hostname": ("TURBOPACK compile-time value", "images.pokemontcg.io"),
+                    "pathname": ("TURBOPACK compile-time value", "/**")
+                }),
+                ("TURBOPACK compile-time value", {
+                    "protocol": ("TURBOPACK compile-time value", "https"),
+                    "hostname": ("TURBOPACK compile-time value", "tcgplayer-cdn.tcgplayer.com"),
                     "pathname": ("TURBOPACK compile-time value", "/**")
                 })
             ]),

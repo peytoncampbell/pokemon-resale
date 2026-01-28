@@ -1,9 +1,6 @@
 {
   "app": {
-    "[project]/personal/resale/pokemon-resale/apps/web/src/app/page": [
-      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
-    ],
-    "[project]/personal/resale/pokemon-resale/apps/web/src/app/setup/page": [
+    "[project]/personal/resale/pokemon-resale/apps/web/src/app/inventory/page": [
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
     ]
   },

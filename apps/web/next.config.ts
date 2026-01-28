@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         hostname: "images.pokemontcg.io",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "tcgplayer-cdn.tcgplayer.com",
+        pathname: "/**",
+      },
     ],
   },
   // Use this app directory as Turbopack root (avoids "multiple lockfiles" warning when one exists higher up)

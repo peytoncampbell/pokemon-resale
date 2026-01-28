@@ -1,0 +1,3 @@
+{
+  "/api/justtcg/[...path]/route": "app/api/justtcg/[...path]/route.js"
+}

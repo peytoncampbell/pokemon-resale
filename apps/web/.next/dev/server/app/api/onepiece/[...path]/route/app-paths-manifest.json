@@ -1,0 +1,3 @@
+{
+  "/api/onepiece/[...path]/route": "app/api/onepiece/[...path]/route.js"
+}

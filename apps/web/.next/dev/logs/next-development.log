@@ -1,3 +1,31 @@
-[00:00:01.517] Server  LOG      ✓ Ready in 1191ms
-[00:00:04.551] Server  LOG      ○ Compiling / ...
-[00:00:07.775] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:01.157] Server  LOG      ✓ Ready in 838ms
+[00:00:04.207] Server  LOG      ○ Compiling /inventory ...
+[00:00:06.678] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:06.855] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:08.025] Browser ERROR   A component is changing an uncontrolled input to be controlled. This is likely caused by the value changing from undefined to a defined value, which should not happen. Decide between using a controlled or uncontrolled input element for the lifetime of the component. More info: https://react.dev/link/controlled-components
+[00:00:09.220] Browser ERROR   A component is changing an uncontrolled input to be controlled. This is likely caused by the value changing from undefined to a defined value, which should not happen. Decide between using a controlled or uncontrolled input element for the lifetime of the component. More info: https://react.dev/link/controlled-components
+[00:00:24.937] Server  LOG     JustTCG proxy - fetching: "https://api.justtcg.com/v1/sets?game=one-piece-card-game&orderBy=release_date&order=desc"
+[00:00:26.517] Server  LOG     JustTCG proxy - success
+[00:00:26.574] Server  LOG     JustTCG proxy - fetching: "https://api.justtcg.com/v1/cards?game=one-piece-card-game&set=premium-booster--the-best-one-piece-card-game&limit=30&condition=NM&include_price_history=false"
+[00:00:27.266] Server  ERROR   JustTCG API error: {}
+[00:00:27.962] Server  LOG     JustTCG proxy - fetching: "https://api.justtcg.com/v1/cards?q=luf&game=one-piece-card-game&limit=20&condition=NM&include_price_history=false"
+[00:00:28.092] Server  LOG     JustTCG proxy - fetching: "https://api.justtcg.com/v1/cards?q=luff&game=one-piece-card-game&limit=20&condition=NM&include_price_history=false"
+[00:00:28.142] Server  LOG     JustTCG proxy - fetching: "https://api.justtcg.com/v1/cards?q=luffy&game=one-piece-card-game&limit=20&condition=NM&include_price_history=false"
+[00:00:28.292] Server  LOG     JustTCG proxy - fetching: "https://api.justtcg.com/v1/sets?game=one-piece-card-game&orderBy=release_date&order=desc"
+[00:00:29.204] Server  LOG     JustTCG proxy - success
+[00:00:29.265] Server  LOG     JustTCG proxy - fetching: "https://api.justtcg.com/v1/cards?game=one-piece-card-game&set=premium-booster--the-best-one-piece-card-game&limit=30&condition=NM&include_price_history=false"
+[00:00:29.424] Server  LOG     JustTCG proxy - success
+[00:00:29.429] Server  LOG     JustTCG proxy - success
+[00:00:29.599] Server  LOG     JustTCG proxy - success
+[00:00:30.275] Server  ERROR   JustTCG API error: {}
+[00:00:32.307] Server  LOG     JustTCG proxy - fetching: "https://api.justtcg.com/v1/sets?game=one-piece-card-game&orderBy=release_date&order=desc"
+[00:00:33.227] Server  LOG     JustTCG proxy - success
+[00:00:33.256] Server  LOG     JustTCG proxy - fetching: "https://api.justtcg.com/v1/cards?game=one-piece-card-game&set=premium-booster--the-best-one-piece-card-game&limit=30&condition=NM&include_price_history=false"
+[00:00:34.423] Server  ERROR   JustTCG API error: {}
+[00:00:38.458] Server  LOG     JustTCG proxy - fetching: "https://api.justtcg.com/v1/sets?game=one-piece-card-game&orderBy=release_date&order=desc"
+[00:00:39.194] Server  LOG     JustTCG proxy - success
+[00:00:39.225] Server  LOG     JustTCG proxy - fetching: "https://api.justtcg.com/v1/cards?game=one-piece-card-game&set=premium-booster--the-best-one-piece-card-game&limit=30&condition=NM&include_price_history=false"
+[00:00:39.925] Server  ERROR   JustTCG API error: {}
+[00:01:06.178] Browser ERROR   Failed to add inventory item: {"code":"PGRST204","details":null,"hint":null,"message":"Could not find the 'game_type' column of 'inventory' in the schema cache"}
+[00:01:15.577] Browser ERROR   Failed to add inventory item: {"code":"PGRST204","details":null,"hint":null,"message":"Could not find the 'game_type' column of 'inventory' in the schema cache"}
+[00:09:47.152] Browser LOG     [CursorBrowser] Dialog suppressed: confirm - Are you sure you want to delete this item? (returning true)

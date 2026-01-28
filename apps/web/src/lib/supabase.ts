@@ -94,6 +94,7 @@ export type Database = {
           status: 'IN_STOCK' | 'LISTED' | 'SOLD'
           notes: string | null
           procurement_id: string | null
+          game_type: 'pokemon' | 'onepiece'
           created_at: string
           updated_at: string
         }
@@ -112,6 +113,7 @@ export type Database = {
           status?: 'IN_STOCK' | 'LISTED' | 'SOLD'
           notes?: string | null
           procurement_id?: string | null
+          game_type?: 'pokemon' | 'onepiece'
           created_at?: string
           updated_at?: string
         }
@@ -130,6 +132,7 @@ export type Database = {
           status?: 'IN_STOCK' | 'LISTED' | 'SOLD'
           notes?: string | null
           procurement_id?: string | null
+          game_type?: 'pokemon' | 'onepiece'
           created_at?: string
           updated_at?: string
         }
@@ -273,6 +276,7 @@ export type Database = {
           expected_cost: number | null
           notes: string | null
           status: 'PENDING' | 'RECEIVED' | 'PARTIAL' | 'MISSING'
+          game_type: 'pokemon' | 'onepiece'
           created_at: string
         }
         Insert: {
@@ -287,6 +291,7 @@ export type Database = {
           expected_cost?: number | null
           notes?: string | null
           status?: 'PENDING' | 'RECEIVED' | 'PARTIAL' | 'MISSING'
+          game_type?: 'pokemon' | 'onepiece'
           created_at?: string
         }
         Update: {
@@ -301,6 +306,7 @@ export type Database = {
           expected_cost?: number | null
           notes?: string | null
           status?: 'PENDING' | 'RECEIVED' | 'PARTIAL' | 'MISSING'
+          game_type?: 'pokemon' | 'onepiece'
           created_at?: string
         }
       }

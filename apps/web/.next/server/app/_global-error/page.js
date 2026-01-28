@@ -1,0 +1,11 @@
+var R=require("../../chunks/ssr/[turbopack]_runtime.js")("server/app/_global-error/page.js")
+R.c("server/chunks/ssr/[root-of-the-server]__ec3ab246._.js")
+R.c("server/chunks/ssr/personal_resale_pokemon-resale_apps_web_14a28217._.js")
+R.c("server/chunks/ssr/73530_next_dist_3816589b._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__8af7435a._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__80a52692._.js")
+R.c("server/chunks/ssr/73530_next_dist_513e79f0._.js")
+R.c("server/chunks/ssr/personal_resale_pokemon-resale_apps_web_src_app_43a19ed4._.js")
+R.c("server/chunks/ssr/2343b_apps_web__next-internal_server_app__global-error_page_actions_86122db3.js")
+R.m(92818)
+module.exports=R.m(92818).exports

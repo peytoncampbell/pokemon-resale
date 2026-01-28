@@ -441,19 +441,50 @@ function useCreateOrganization() {
         mutationFn: {
             "useCreateOrganization.useMutation": async (name)=>{
                 const userId = await getCurrentUserId();
+                // Generate a unique invite code (retry if collision)
+                let inviteCode = generateInviteCode();
+                let attempts = 0;
+                const maxAttempts = 10;
                 // Create the organization
-                const { data: org, error: orgError } = await __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from('organizations').insert({
-                    name,
-                    invite_code: generateInviteCode(),
-                    created_by: userId
-                }).select().single();
-                if (orgError) throw orgError;
+                let orgError = null;
+                let org = null;
+                while(attempts < maxAttempts){
+                    const { data, error } = await __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from('organizations').insert({
+                        name,
+                        invite_code: inviteCode,
+                        created_by: userId
+                    }).select().single();
+                    if (!error) {
+                        org = data;
+                        break;
+                    }
+                    // If it's a unique constraint violation, try a new code
+                    if (error.code === '23505' || error.message?.includes('unique') || error.message?.includes('duplicate')) {
+                        inviteCode = generateInviteCode();
+                        attempts++;
+                        continue;
+                    }
+                    orgError = error;
+                    break;
+                }
+                if (orgError) {
+                    console.error('Error creating organization:', orgError);
+                    throw new Error(orgError.message || 'Failed to create organization');
+                }
+                if (!org) {
+                    throw new Error('Failed to create organization after multiple attempts');
+                }
                 // Add creator as first member
                 const { error: memberError } = await __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from('organization_members').insert({
                     organization_id: org.id,
                     user_id: userId
                 });
-                if (memberError) throw memberError;
+                if (memberError) {
+                    console.error('Error adding creator as member:', memberError);
+                    // Try to clean up the organization if member insert fails
+                    await __TURBOPACK__imported__module__$5b$project$5d2f$personal$2f$resale$2f$pokemon$2d$resale$2f$apps$2f$web$2f$src$2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from('organizations').delete().eq('id', org.id);
+                    throw new Error(memberError.message || 'Failed to add you as a member');
+                }
                 return org;
             }
         }["useCreateOrganization.useMutation"],

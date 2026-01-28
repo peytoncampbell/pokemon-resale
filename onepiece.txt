@@ -1,0 +1,342 @@
+import requests
+                        response = requests.get('https://optcgapi.com/api/sets/card/OP01-001/')
+                        response_text = response.json()
+
+Selected Endpoint: allSets
+This endpoint allows for users to get all the names and ids for the sets currently in the database.
+
+You would want to do an API call like this: https://www.optcgapi.com/api/allSets/
+
+Here is what the return data will look like:
+                
+                    [
+                        {
+                            "set_name": "Romance Dawn",
+                            "set_id": "OP-01"
+                        },
+                        {
+                            "set_name": "Paramount War",
+                            "set_id": "OP-02"
+                        }
+                    ]
+
+Selected Endpoint: allSetCards
+This endpoint allows for users to get all the cards from the sets at once. Very useful when you want all the data in one go!
+
+You would want to do an API call like this: https://www.optcgapi.com/api/allSetCards/
+
+Here is a snippet of what the return data will look like:
+                
+                    [
+                       {
+                            "inventory_price": 0.65,
+                            "market_price": 0.8,
+                            "card_name": "Perona",
+                            "set_name": "Romance Dawn",
+                            "card_text": "[On Play] Look at 5 cards from the top of your deck and place them at the top or bottom of the deck in any order.",
+                            "set_id": "OP-01",
+                            "rarity": "UC",
+                            "card_set_id": "OP01-077",
+                            "card_color": "Blue",
+                            "card_type": "Character",
+                            "life": "NULL",
+                            "card_cost": "1",
+                            "card_power": "2000",
+                            "sub_types": "Thriller Bark Pirates",
+                            "counter_amount": 1000,
+                            "attribute": "Special",
+                            "date_scraped": "2025-11-12",
+                            "card_image_id": "OP01-077",
+                            "card_image": "https://www.optcgapi.com/media/static/Card_Images/OP01-077.jpg"
+                        },
+                        {
+                            "inventory_price": 0.15,
+                            "market_price": 0.32,
+                            "card_name": "Tony Tony.Chopper",
+                            "set_name": "Romance Dawn",
+                            "card_text": "[DON!! x1] [When Attacking] You may trash 1 card from your hand: Add up to 1 "Straw Hat Crew" type Character card other than [Tony Tony.Chopper] with a cost of 4 or less from your trash to your hand.  This card has been officially errata'd.",
+                            "set_id": "OP-01",
+                            "rarity": "UC",
+                            "card_set_id": "OP01-015",
+                            "card_color": "Red",
+                            "card_type": "Character",
+                            "life": "NULL",
+                            "card_cost": "3",
+                            "card_power": "4000",
+                            "sub_types": "Animal Straw Hat Crew",
+                            "counter_amount": 1000,
+                            "attribute": "Wisdom",
+                            "date_scraped": "2025-11-12",
+                            "card_image_id": "OP01-015",
+                            "card_image": "https://www.optcgapi.com/media/static/Card_Images/OP01-015.jpg"
+                        }, 
+                    ]
+                    
+This endpoint allows for users to get all of the cards in a specific set, given the set id value passed in.
+
+You would want to do an API call like this: https://www.optcgapi.com/api/sets/{set-id}/
+
+Here is a snippet of what the return data will look like:
+                
+                    [
+                        {
+                            "inventory_price": 0.54,
+                            "market_price": 0.89,
+                            "card_name": "Monkey.D.Dragon (015)",
+                            "set_name": "500 Years in the Future",
+                            "card_text": "[Rush](This card can attack on the turn in which it is played.) [On Play] Give up to 2 rested DON!! cards to your Leader or 1 of your Characters.",
+                            "set_id": "OP-07",
+                            "rarity": "SR",
+                            "card_set_id": "OP07-015",
+                            "card_color": "Red",
+                            "card_type": "Character",
+                            "life": "NULL",
+                            "card_cost": "8",
+                            "card_power": "9000",
+                            "sub_types": "Revolutionary Army",
+                            "counter_amount": 0,
+                            "attribute": "Special",
+                            "date_scraped": "2025-11-12",
+                            "card_image_id": "OP07-015",
+                            "card_image": "https://www.optcgapi.com/media/static/Card_Images/OP07-015.jpg"
+                        },
+                        {
+                            "inventory_price": 0.44,
+                            "market_price": 0.42,
+                            "card_name": "Franky",
+                            "set_name": "500 Years in the Future",
+                            "card_text": "[Trigger] Draw 1 card. Then, if you have 1 or less Life cards, play this card.",
+                            "set_id": "OP-07",
+                            "rarity": "R",
+                            "card_set_id": "OP07-107",
+                            "card_color": "Yellow",
+                            "card_type": "Character",
+                            "life": "NULL",
+                            "card_cost": "4",
+                            "card_power": "5000",
+                            "sub_types": "Straw Hat Crew Egghead",
+                            "counter_amount": 2000,
+                            "attribute": "Strike",
+                            "date_scraped": "2025-11-12",
+                            "card_image_id": "OP07-107",
+                            "card_image": "https://www.optcgapi.com/media/static/Card_Images/OP07-107.jpg"
+                        },
+                    ]
+
+elected Endpoint: setsCardIDOnly
+This endpoint allows for users to get a specific card given the card set id. This endpoint can return multiple cards as there are sometimes numerous variants with the same card_set_id.
+
+You would want to do an API call like this: https://www.optcgapi.com/api/sets/card/{card_set_id}/
+
+Here is a snippet of what the return data will look like:
+                
+                    [
+                        {
+                            "inventory_price": 0.8,
+                            "market_price": 0.81,
+                            "card_name": "Roronoa Zoro (001)",
+                            "set_name": "Romance Dawn",
+                            "card_text": "[DON!! x1] [Your Turn] All of your Characters gain +1000 power.",
+                            "set_id": "OP-01",
+                            "rarity": "L",
+                            "card_set_id": "OP01-001",
+                            "card_color": "Red",
+                            "card_type": "Leader",
+                            "life": "5",
+                            "card_cost": "NULL",
+                            "card_power": "5000",
+                            "sub_types": "Straw Hat Crew Supernovas",
+                            "counter_amount": 0,
+                            "attribute": "Slash",
+                            "date_scraped": "2025-11-12",
+                            "card_image_id": "OP01-001",
+                            "card_image": "https://www.optcgapi.com/media/static/Card_Images/OP01-001.jpg"
+                        },
+                        {
+                            "inventory_price": 200.0,
+                            "market_price": 265.96,
+                            "card_name": "Roronoa Zoro (001) (Parallel)",
+                            "set_name": "Romance Dawn",
+                            "card_text": "[DON!! x1] [Your Turn] All of your Characters gain +1000 power.",
+                            "set_id": "OP-01",
+                            "rarity": "L",
+                            "card_set_id": "OP01-001",
+                            "card_color": "Red",
+                            "card_type": "Leader",
+                            "life": "5",
+                            "card_cost": "NULL",
+                            "card_power": "5000",
+                            "sub_types": "Straw Hat Crew Supernovas",
+                            "counter_amount": 0,
+                            "attribute": "Slash",
+                            "date_scraped": "2025-11-12",
+                            "card_image_id": "OP01-001_p1",
+                            "card_image": "https://www.optcgapi.com/media/static/Card_Images/OP01-001_p1.jpg"
+                        }
+Selected Endpoint: setsFiltered
+This endpoint allows for users to get a specific card/cards given the filters passed in the path.
+
+You would want to do an API call like this: https://www.optcgapi.com/api/sets/filtered/?card_name=Zoro
+
+These are the filters you can pass in to the endpoint:
+
+card_name
+color
+set_id
+set_name
+rarity
+card_type
+card_cost
+card_power
+attribute
+card_image_id
+Here is what a snippet of the return data will look like:
+                
+                    [
+                        {
+                            "inventory_price": 4.11,
+                            "market_price": 5.2,
+                            "card_name": "Roronoa Zoro (025)",
+                            "set_name": "Romance Dawn",
+                            "card_text": "[Rush] (This card can attack on the turn in which it is played.)",
+                            "set_id": "OP-01",
+                            "rarity": "SR",
+                            "card_set_id": "OP01-025",
+                            "card_color": "Red",
+                            "card_type": "Character",
+                            "life": "NULL",
+                            "card_cost": "3",
+                            "card_power": "5000",
+                            "sub_types": "Straw Hat Crew Supernovas",
+                            "counter_amount": 0,
+                            "attribute": "Slash",
+                            "date_scraped": "2025-11-12",
+                            "card_image_id": "OP01-025",
+                            "card_image": "https://www.optcgapi.com/media/static/Card_Images/OP01-025.jpg"
+                        },
+                        {
+                            "inventory_price": 0.8,
+                            "market_price": 0.81,
+                            "card_name": "Roronoa Zoro (001)",
+                            "set_name": "Romance Dawn",
+                            "card_text": "[DON!! x1] [Your Turn] All of your Characters gain +1000 power.",
+                            "set_id": "OP-01",
+                            "rarity": "L",
+                            "card_set_id": "OP01-001",
+                            "card_color": "Red",
+                            "card_type": "Leader",
+                            "life": "5",
+                            "card_cost": "NULL",
+                            "card_power": "5000",
+                            "sub_types": "Straw Hat Crew Supernovas",
+                            "counter_amount": 0,
+                            "attribute": "Slash",
+                            "date_scraped": "2025-11-12",
+                            "card_image_id": "OP01-001",
+                            "card_image": "https://www.optcgapi.com/media/static/Card_Images/OP01-001.jpg"
+                        },
+                    ]
+                    
+Selected Endpoint: setsTwoWeeks
+This endpoint allows for users to get the regular card data, plus the two week pricing data for a specific card based on the card_set_id.
+
+You would want to do an API call like this: https://www.optcgapi.com/api/sets/card/twoweeks/OP01-001/
+
+Here is what the return data will look like:
+                
+                    [
+                        {
+                            "inventory_price": 0.8,
+                            "market_price": 0.81,
+                            "card_name": "Roronoa Zoro (001)",
+                            "set_name": "Romance Dawn",
+                            "card_text": "[DON!! x1] [Your Turn] All of your Characters gain +1000 power.",
+                            "set_id": "OP-01",
+                            "rarity": "L",
+                            "card_set_id": "OP01-001",
+                            "card_color": "Red",
+                            "card_type": "Leader",
+                            "life": "5",
+                            "card_cost": "NULL",
+                            "card_power": "5000",
+                            "sub_types": "Straw Hat Crew Supernovas",
+                            "counter_amount": 0,
+                            "attribute": "Slash",
+                            "date_scraped": "2025-11-12",
+                            "card_image_id": "OP01-001",
+                            "card_image": "https://www.optcgapi.com/media/static/Card_Images/OP01-001.jpg",
+                            "Day1_Inventory_Price": 0.8,
+                            "Day1_Market_Price": 0.81,
+                            "Day2_Inventory_Price": 0.8,
+                            "Day2_Market_Price": 0.81,
+                            "Day3_Inventory_Price": 0.8,
+                            "Day3_Market_Price": 0.81,
+                            "Day4_Inventory_Price": 0.8,
+                            "Day4_Market_Price": 0.81,
+                            "Day5_Inventory_Price": 0.8,
+                            "Day5_Market_Price": 0.81,
+                            "Day6_Inventory_Price": 0.8,
+                            "Day6_Market_Price": 0.8,
+                            "Day7_Inventory_Price": 0.8,
+                            "Day7_Market_Price": 0.8,
+                            "Day8_Inventory_Price": 0.8,
+                            "Day8_Market_Price": 0.8,
+                            "Day9_Inventory_Price": 0.8,
+                            "Day9_Market_Price": 0.82,
+                            "Day10_Inventory_Price": 0.8,
+                            "Day10_Market_Price": 0.82,
+                            "Day11_Inventory_Price": 0.65,
+                            "Day11_Market_Price": 0.75,
+                            "Day12_Inventory_Price": 0.65,
+                            "Day12_Market_Price": 0.75,
+                            "Day13_Inventory_Price": 0.65,
+                            "Day13_Market_Price": 0.75
+                        },
+                        {
+                            "inventory_price": 200.0,
+                            "market_price": 265.96,
+                            "card_name": "Roronoa Zoro (001) (Parallel)",
+                            "set_name": "Romance Dawn",
+                            "card_text": "[DON!! x1] [Your Turn] All of your Characters gain +1000 power.",
+                            "set_id": "OP-01",
+                            "rarity": "L",
+                            "card_set_id": "OP01-001",
+                            "card_color": "Red",
+                            "card_type": "Leader",
+                            "life": "5",
+                            "card_cost": "NULL",
+                            "card_power": "5000",
+                            "sub_types": "Straw Hat Crew Supernovas",
+                            "counter_amount": 0,
+                            "attribute": "Slash",
+                            "date_scraped": "2025-11-12",
+                            "card_image_id": "OP01-001_p1",
+                            "card_image": "https://www.optcgapi.com/media/static/Card_Images/OP01-001_p1.jpg",
+                            "Day1_Inventory_Price": 200.0,
+                            "Day1_Market_Price": 265.96,
+                            "Day2_Inventory_Price": 200.0,
+                            "Day2_Market_Price": 265.96,
+                            "Day3_Inventory_Price": 200.0,
+                            "Day3_Market_Price": 265.96,
+                            "Day4_Inventory_Price": 200.0,
+                            "Day4_Market_Price": 265.96,
+                            "Day5_Inventory_Price": 200.0,
+                            "Day5_Market_Price": 265.96,
+                            "Day6_Inventory_Price": 200.0,
+                            "Day6_Market_Price": 265.96,
+                            "Day7_Inventory_Price": 200.0,
+                            "Day7_Market_Price": 265.96,
+                            "Day8_Inventory_Price": 200.0,
+                            "Day8_Market_Price": 265.96,
+                            "Day9_Inventory_Price": 200.0,
+                            "Day9_Market_Price": 265.81,
+                            "Day10_Inventory_Price": 200.0,
+                            "Day10_Market_Price": 265.81,
+                            "Day11_Inventory_Price": 220.0,
+                            "Day11_Market_Price": 267.1,
+                            "Day12_Inventory_Price": 220.0,
+                            "Day12_Market_Price": 267.1,
+                            "Day13_Inventory_Price": 220.0,
+                            "Day13_Market_Price": 267.1
+                        }
+                    ]
