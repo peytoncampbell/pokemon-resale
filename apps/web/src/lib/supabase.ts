@@ -478,6 +478,35 @@ export type Database = {
           created_at?: string
         }
       }
+      tcg_cache: {
+        Row: {
+          id: string
+          product_type: 'card' | 'sealed' | 'graded'
+          game_type: 'pokemon' | 'onepiece'
+          data: unknown
+          source: 'justtcg' | 'tcgplayer' | 'ebay'
+          created_at: string
+          expires_at: string
+        }
+        Insert: {
+          id: string
+          product_type: 'card' | 'sealed' | 'graded'
+          game_type: 'pokemon' | 'onepiece'
+          data: unknown
+          source: 'justtcg' | 'tcgplayer' | 'ebay'
+          created_at?: string
+          expires_at: string
+        }
+        Update: {
+          id?: string
+          product_type?: 'card' | 'sealed' | 'graded'
+          game_type?: 'pokemon' | 'onepiece'
+          data?: unknown
+          source?: 'justtcg' | 'tcgplayer' | 'ebay'
+          created_at?: string
+          expires_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

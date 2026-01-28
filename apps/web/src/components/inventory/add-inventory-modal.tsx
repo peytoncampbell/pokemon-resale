@@ -6,10 +6,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { X, Search } from 'lucide-react'
-import { useAddInventoryItem, useSearchCards, useRecentCards } from '@/hooks/use-inventory'
+import { X, Search, CreditCard, Package } from 'lucide-react'
+import { useAddInventoryItem, useSearchCards, useRecentCards, useSearchSealed, useRecentSealed } from '@/hooks/use-inventory'
 import { useCheckDuplicates } from '@/hooks/use-bulk-operations'
-import type { GameType, UnifiedCard } from '@/lib/card-types'
+import type { GameType, ProductType, UnifiedCard } from '@/lib/card-types'
 import { formatCurrency } from '@/lib/utils'
 import { DuplicateWarningModal } from './duplicate-warning-modal'
 import type { InventoryItem } from '@/lib/supabase'
@@ -42,21 +42,42 @@ const GAME_TYPES: { value: GameType; label: string }[] = [
   { value: 'onepiece', label: 'One Piece' },
 ]
 
+type ProductTab = 'cards' | 'sealed'
+
+const PRODUCT_TABS: { value: ProductTab; label: string; icon: typeof CreditCard }[] = [
+  { value: 'cards', label: 'Cards', icon: CreditCard },
+  { value: 'sealed', label: 'Sealed', icon: Package },
+]
+
 export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchEnabled, setSearchEnabled] = useState(false)
   const [gameType, setGameType] = useState<GameType>('pokemon')
+  const [productTab, setProductTab] = useState<ProductTab>('cards')
   const [selectedCard, setSelectedCard] = useState<UnifiedCard | null>(null)
   const [duplicates, setDuplicates] = useState<InventoryItem[]>([])
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false)
   const [pendingSubmitData, setPendingSubmitData] = useState<AddInventoryForm | null>(null)
-  const { data: recentCards, isLoading: isLoadingRecent } = useRecentCards(gameType)
-  const { data: searchResults, isLoading: isSearching } = useSearchCards(searchQuery, gameType, searchEnabled)
+
+  // Cards queries
+  const { data: recentCards, isLoading: isLoadingRecentCards } = useRecentCards(gameType)
+  const { data: searchCardsResults, isLoading: isSearchingCards } = useSearchCards(searchQuery, gameType, searchEnabled && productTab === 'cards')
+
+  // Sealed queries
+  const { data: recentSealed, isLoading: isLoadingRecentSealed } = useRecentSealed(gameType)
+  const { data: searchSealedResults, isLoading: isSearchingSealed } = useSearchSealed(searchQuery, gameType, searchEnabled && productTab === 'sealed')
+
   const addItem = useAddInventoryItem()
   const checkDuplicates = useCheckDuplicates()
 
-  const displayCards = searchEnabled && searchQuery.length > 0 ? searchResults : recentCards
-  const isLoading = searchEnabled && searchQuery.length > 0 ? isSearching : isLoadingRecent
+  // Determine which data to display based on product tab
+  const displayCards = productTab === 'cards'
+    ? (searchEnabled && searchQuery.length > 0 ? searchCardsResults : recentCards)
+    : (searchEnabled && searchQuery.length > 0 ? searchSealedResults : recentSealed)
+
+  const isLoading = productTab === 'cards'
+    ? (searchEnabled && searchQuery.length > 0 ? isSearchingCards : isLoadingRecentCards)
+    : (searchEnabled && searchQuery.length > 0 ? isSearchingSealed : isLoadingRecentSealed)
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && searchQuery.length > 0) {
@@ -165,6 +186,13 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
     setSelectedCard(null)
   }
 
+  const handleProductTabChange = (newTab: ProductTab) => {
+    setProductTab(newTab)
+    setSearchQuery('')
+    setSearchEnabled(false)
+    setSelectedCard(null)
+  }
+
   if (!open) return null
 
   return (
@@ -175,7 +203,9 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
       />
       <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden bg-background rounded-3xl shadow-2xl m-4 flex flex-col border-none">
         <div className="flex items-center justify-between border-b bg-gradient-to-r from-background to-accent/5 px-6 py-5">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-vision-blue to-vision-cyan bg-clip-text text-transparent">Add Card to Inventory</h2>
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-vision-blue to-vision-cyan bg-clip-text text-transparent">
+            Add {productTab === 'cards' ? 'Card' : 'Sealed Product'} to Inventory
+          </h2>
           <Button variant="ghost" size="icon" onClick={onClose} className="rounded-xl hover:bg-accent/50">
             <X className="h-5 w-5" />
           </Button>
@@ -184,7 +214,30 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
         <div className="flex-1 overflow-y-auto">
           {!selectedCard ? (
             <div className="p-6 space-y-6">
-              <div className="flex gap-2 mb-4">
+              {/* Product Type Tabs */}
+              <div className="flex gap-1 p-1 bg-accent/10 rounded-xl w-fit">
+                {PRODUCT_TABS.map((tab) => {
+                  const Icon = tab.icon
+                  return (
+                    <button
+                      key={tab.value}
+                      type="button"
+                      onClick={() => handleProductTabChange(tab.value)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        productTab === tab.value
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {tab.label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Game Type Buttons */}
+              <div className="flex gap-2">
                 {GAME_TYPES.map((gt) => (
                   <button
                     key={gt.value}
@@ -203,14 +256,16 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
 
               <div>
                 <label className="text-sm font-semibold mb-3 block text-foreground">
-                  {searchEnabled && searchQuery.length > 0 ? 'Search Results' : `Recent ${gameType === 'pokemon' ? 'Pokemon' : 'One Piece'} Cards`}
+                  {searchEnabled && searchQuery.length > 0
+                    ? 'Search Results'
+                    : `Recent ${gameType === 'pokemon' ? 'Pokemon' : 'One Piece'} ${productTab === 'cards' ? 'Cards' : 'Sealed Products'}`}
                 </label>
                 <div className="relative flex gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <input
                       type="text"
-                      placeholder="Search cards or sealed products..."
+                      placeholder={productTab === 'cards' ? 'Search cards...' : 'Search sealed products (booster box, ETB, etc.)...'}
                       value={searchQuery}
                       onChange={(e) => handleSearchChange(e.target.value)}
                       onKeyDown={handleKeyDown}
@@ -227,7 +282,9 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                     Search
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">Press Enter or click Search to find cards and sealed products</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Press Enter or click Search to find {productTab === 'cards' ? 'cards' : 'sealed products'}
+                </p>
               </div>
 
               {isLoading && (
@@ -272,7 +329,9 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
 
               {!isLoading && searchEnabled && searchQuery.length > 0 && displayCards?.data.length === 0 && (
                 <div className="text-center py-12">
-                  <p className="text-muted-foreground">No cards found. Try a different search.</p>
+                  <p className="text-muted-foreground">
+                    No {productTab === 'cards' ? 'cards' : 'sealed products'} found. Try a different search.
+                  </p>
                 </div>
               )}
             </div>
@@ -308,7 +367,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                     onClick={() => setSelectedCard(null)}
                     className="rounded-xl"
                   >
-                    Choose Different Card
+                    Choose Different {selectedCard.productType === 'sealed' ? 'Product' : 'Card'}
                   </Button>
                 </div>
               </div>

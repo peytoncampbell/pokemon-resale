@@ -194,3 +194,86 @@ export function useSearchCards(query: string, gameType: GameType = 'pokemon', en
     staleTime: 5 * 60 * 1000, // Cache results for 5 minutes since card data doesn't change often
   })
 }
+
+// Sealed products from JustTCG API
+export function useSearchSealed(query: string, gameType: GameType = 'pokemon', enabled = true) {
+  return useQuery({
+    queryKey: ['sealed', 'search', query, gameType],
+    queryFn: async () => {
+      const params = new URLSearchParams()
+      params.set('game', gameType)
+      if (query) params.set('search', query)
+
+      const response = await fetch(`/api/tcg/sealed?${params}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch sealed products')
+      }
+      const result = await response.json()
+
+      // Transform to UnifiedCard format for compatibility
+      return {
+        data: result.data.map((product: {
+          id: string
+          name: string
+          gameType: GameType
+          setName: string
+          imageUrl: string
+          prices: { market: number | null }
+          sealedType: string
+        }) => ({
+          id: product.id,
+          gameType: product.gameType,
+          productType: 'sealed' as const,
+          name: product.name,
+          setName: product.setName,
+          imageSmall: product.imageUrl,
+          marketPrice: product.prices.market,
+          sealedType: product.sealedType,
+        })),
+        totalCount: result.meta.total,
+      }
+    },
+    enabled: enabled,
+    staleTime: 60 * 60 * 1000, // Cache for 1 hour since sealed data changes slowly
+  })
+}
+
+export function useRecentSealed(gameType: GameType = 'pokemon') {
+  return useQuery({
+    queryKey: ['sealed', 'recent', gameType],
+    queryFn: async () => {
+      const params = new URLSearchParams()
+      params.set('game', gameType)
+      params.set('limit', '12')
+
+      const response = await fetch(`/api/tcg/sealed?${params}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch sealed products')
+      }
+      const result = await response.json()
+
+      return {
+        data: result.data.map((product: {
+          id: string
+          name: string
+          gameType: GameType
+          setName: string
+          imageUrl: string
+          prices: { market: number | null }
+          sealedType: string
+        }) => ({
+          id: product.id,
+          gameType: product.gameType,
+          productType: 'sealed' as const,
+          name: product.name,
+          setName: product.setName,
+          imageSmall: product.imageUrl,
+          marketPrice: product.prices.market,
+          sealedType: product.sealedType,
+        })),
+        totalCount: result.meta.total,
+      }
+    },
+    staleTime: 60 * 60 * 1000,
+  })
+}
