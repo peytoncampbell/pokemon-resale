@@ -3,12 +3,12 @@ import { cn } from "@/lib/utils"
 import { cva, type VariantProps } from "class-variance-authority"
 
 const cardVariants = cva(
-  "rounded-xl text-card-foreground",
+  "rounded-xl text-card-foreground transition-all duration-200",
   {
     variants: {
       variant: {
-        default: "glass-card",
-        solid: "bg-vision-navy-light border border-white/10",
+        default: "glass-card hover:border-white/20 hover:shadow-lg hover:shadow-vision-blue/5",
+        solid: "bg-vision-navy-light border border-white/10 hover:border-white/20 hover:shadow-lg hover:shadow-vision-blue/5",
         transparent: "bg-transparent",
       },
     },

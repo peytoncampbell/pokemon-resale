@@ -323,10 +323,10 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
                   <label className="text-sm font-semibold">Type</label>
                   <select
                     {...register('counterparty_type')}
-                    className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/20 transition-all"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/50 transition-all appearance-none cursor-pointer"
                   >
                     {COUNTERPARTY_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
+                      <option key={t.value} value={t.value} className="bg-vision-navy text-white">{t.label}</option>
                     ))}
                   </select>
                 </div>

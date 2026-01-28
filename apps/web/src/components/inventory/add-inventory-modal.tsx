@@ -153,7 +153,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
       />
       <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden bg-background rounded-3xl shadow-2xl m-4 flex flex-col border-none">
         <div className="flex items-center justify-between border-b bg-gradient-to-r from-background to-accent/5 px-6 py-5">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-[#DC143C] to-[#FF1744] bg-clip-text text-transparent">Add Card to Inventory</h2>
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-vision-blue to-vision-cyan bg-clip-text text-transparent">Add Card to Inventory</h2>
           <Button variant="ghost" size="icon" onClick={onClose} className="rounded-xl hover:bg-accent/50">
             <X className="h-5 w-5" />
           </Button>
@@ -170,7 +170,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                     onClick={() => handleGameTypeChange(gt.value)}
                     className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
                       gameType === gt.value
-                        ? 'bg-gradient-to-r from-[#DC143C] to-[#FF1744] text-white shadow-md'
+                        ? 'bg-gradient-to-r from-vision-blue to-vision-cyan text-white shadow-md'
                         : 'bg-accent/10 text-muted-foreground hover:bg-accent/20'
                     }`}
                   >
@@ -190,7 +190,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                     placeholder="Search by card name (e.g., Charizard)"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-xl border border-input bg-background pl-11 pr-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C]/20 transition-all"
+                    className="w-full rounded-xl border border-input bg-background pl-11 pr-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vision-blue/50 transition-all"
                     autoFocus
                   />
                 </div>
@@ -198,7 +198,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
 
               {isLoading && (
                 <div className="flex items-center justify-center py-12">
-                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#DC143C] border-r-transparent"></div>
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-vision-blue border-r-transparent"></div>
                 </div>
               )}
 
@@ -222,7 +222,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                       <h3 className="font-bold text-sm line-clamp-1">{card.name}</h3>
                       <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{card.setName}</p>
                       {card.marketPrice && (
-                        <p className="text-sm font-bold text-[#DC143C]">
+                        <p className="text-sm font-bold text-vision-cyan">
                           ~{formatCurrency(card.marketPrice, 'USD')}
                         </p>
                       )}
@@ -276,10 +276,10 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                   </label>
                   <select
                     {...register('location')}
-                    className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C]/20 transition-all"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vision-blue/50 transition-all appearance-none cursor-pointer"
                   >
                     {LOCATIONS.map((location) => (
-                      <option key={location} value={location}>
+                      <option key={location} value={location} className="bg-vision-navy text-white">
                         {location}
                       </option>
                     ))}
@@ -295,13 +295,13 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                   </label>
                   <select
                     {...register('condition')}
-                    className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C]/20 transition-all"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vision-blue/50 transition-all appearance-none cursor-pointer"
                   >
-                    <option value="NM">Near Mint (NM)</option>
-                    <option value="LP">Lightly Played (LP)</option>
-                    <option value="MP">Moderately Played (MP)</option>
-                    <option value="HP">Heavily Played (HP)</option>
-                    <option value="DMG">Damaged (DMG)</option>
+                    <option value="NM" className="bg-vision-navy text-white">Near Mint (NM)</option>
+                    <option value="LP" className="bg-vision-navy text-white">Lightly Played (LP)</option>
+                    <option value="MP" className="bg-vision-navy text-white">Moderately Played (MP)</option>
+                    <option value="HP" className="bg-vision-navy text-white">Heavily Played (HP)</option>
+                    <option value="DMG" className="bg-vision-navy text-white">Damaged (DMG)</option>
                   </select>
                   {errors.condition && (
                     <p className="text-sm text-destructive">{errors.condition.message}</p>
@@ -318,7 +318,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                     type="number"
                     min="1"
                     {...register('quantity', { valueAsNumber: true })}
-                    className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C]/20 transition-all"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vision-blue/50 transition-all"
                   />
                   {errors.quantity && (
                     <p className="text-sm text-destructive">{errors.quantity.message}</p>
@@ -339,7 +339,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                     step="0.01"
                     placeholder="0.00"
                     {...register('acquisitionCost', { valueAsNumber: true })}
-                    className="w-full rounded-xl border border-input bg-background px-4 py-2.5 pl-8 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C]/20 transition-all"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 pl-8 text-sm text-white ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vision-blue/50 transition-all"
                   />
                 </div>
                 {errors.acquisitionCost && (
@@ -353,7 +353,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                   rows={2}
                   placeholder="Add any additional notes..."
                   {...register('notes')}
-                  className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C]/20 resize-none transition-all"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vision-blue/50 resize-none transition-all"
                 />
               </div>
 
@@ -368,7 +368,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-[#DC143C] to-[#FF1744] hover:shadow-lg hover:shadow-[#DC143C]/20 transition-all rounded-xl"
+                  className="flex-1 bg-gradient-to-r from-vision-blue to-vision-cyan hover:shadow-lg hover:shadow-vision-blue/20 transition-all rounded-xl"
                   disabled={addItem.isPending}
                 >
                   {addItem.isPending ? 'Adding...' : 'Add to Inventory'}

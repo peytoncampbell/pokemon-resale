@@ -323,19 +323,19 @@ export function BuyTransactionModal({ open, onClose }: BuyTransactionModalProps)
                       <select
                         value={item.condition}
                         onChange={(e) => handleUpdateItem(item.card.id, { condition: e.target.value as typeof CONDITIONS[number] })}
-                        className="rounded-lg border border-input bg-background px-2 py-1 text-sm"
+                        className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm text-white cursor-pointer"
                       >
                         {CONDITIONS.map((c) => (
-                          <option key={c} value={c}>{c}</option>
+                          <option key={c} value={c} className="bg-vision-navy text-white">{c}</option>
                         ))}
                       </select>
                       <select
                         value={item.location}
                         onChange={(e) => handleUpdateItem(item.card.id, { location: e.target.value })}
-                        className="rounded-lg border border-input bg-background px-2 py-1 text-sm"
+                        className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm text-white cursor-pointer"
                       >
                         {LOCATIONS.map((loc) => (
-                          <option key={loc} value={loc}>{loc}</option>
+                          <option key={loc} value={loc} className="bg-vision-navy text-white">{loc}</option>
                         ))}
                       </select>
                       <Button
@@ -376,10 +376,10 @@ export function BuyTransactionModal({ open, onClose }: BuyTransactionModalProps)
                   <label className="text-sm font-semibold">Type</label>
                   <select
                     {...register('counterparty_type')}
-                    className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vision-blue/20 transition-all"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vision-blue/50 transition-all appearance-none cursor-pointer"
                   >
                     {COUNTERPARTY_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
+                      <option key={t.value} value={t.value} className="bg-vision-navy text-white">{t.label}</option>
                     ))}
                   </select>
                 </div>

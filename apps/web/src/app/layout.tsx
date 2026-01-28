@@ -15,7 +15,10 @@ const AppProviders = dynamic(
 );
 
 export const metadata: Metadata = {
-  title: "Pokemon Resale Platform",
+  title: {
+    default: "Dashboard - Pokemon Resale",
+    template: "%s - Pokemon Resale",
+  },
   description: "Track deals, manage inventory, and grow your Pokemon card business",
 };
 

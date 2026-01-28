@@ -517,10 +517,10 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
                           <select
                             value={ii.condition}
                             onChange={(e) => handleUpdateInItem(ii.card.id, { condition: e.target.value as typeof CONDITIONS[number] })}
-                            className="rounded border border-input bg-background px-1 py-0.5 text-xs"
+                            className="rounded border border-white/10 bg-white/5 px-1 py-0.5 text-xs text-white cursor-pointer"
                           >
                             {CONDITIONS.map((c) => (
-                              <option key={c} value={c}>{c}</option>
+                              <option key={c} value={c} className="bg-vision-navy text-white">{c}</option>
                             ))}
                           </select>
                           <Button
@@ -558,10 +558,10 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
                   <label className="text-sm font-semibold">Type</label>
                   <select
                     {...register('counterparty_type')}
-                    className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vision-purple/20 transition-all"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vision-purple/50 transition-all appearance-none cursor-pointer"
                   >
                     {COUNTERPARTY_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
+                      <option key={t.value} value={t.value} className="bg-vision-navy text-white">{t.label}</option>
                     ))}
                   </select>
                 </div>
