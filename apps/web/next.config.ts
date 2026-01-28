@@ -15,12 +15,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Use this app directory as Turbopack root (avoids "multiple lockfiles" warning when one exists higher up)
-  experimental: {
-    turbo: {
-      root: ".",
-    },
-  },
 };
 
 export default nextConfig;
