@@ -19,6 +19,7 @@ export interface AddInventoryData {
   notes?: string
   procurement_id?: string
   game_type?: 'pokemon' | 'onepiece'
+  product_type?: 'card' | 'sealed'
 }
 
 export interface UpdateInventoryData {
@@ -110,6 +111,7 @@ export function useAddInventoryItem() {
         notes: data.notes || null,
         procurement_id: data.procurement_id || null,
         game_type: data.game_type || 'pokemon',
+        product_type: data.product_type || 'card',
       }
 
       const { data: result, error } = await supabase
@@ -184,10 +186,11 @@ export function useRecentCards(gameType: GameType = 'pokemon') {
   })
 }
 
-export function useSearchCards(query: string, gameType: GameType = 'pokemon') {
+export function useSearchCards(query: string, gameType: GameType = 'pokemon', enabled = true) {
   return useQuery({
     queryKey: ['cards', 'search', query, gameType],
     queryFn: () => cardApi.searchCards(query, gameType),
-    enabled: query.length > 2,
+    enabled: enabled && query.length > 0,
+    staleTime: 5 * 60 * 1000, // Cache results for 5 minutes since card data doesn't change often
   })
 }

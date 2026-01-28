@@ -32,6 +32,9 @@ export interface JustTCGCard {
   rarity: string
   details?: string | null
   variants: JustTCGVariant[]
+  // Sealed product fields
+  category?: string
+  type?: string
 }
 
 export interface JustTCGSet {
@@ -149,5 +152,25 @@ export const justTCGApi = {
     }
     // Fallback placeholder
     return '/card-placeholder.png'
+  },
+
+  // Determine if a product is sealed (booster box, ETB, etc.) or a card
+  isSealed(card: JustTCGCard): boolean {
+    const sealedKeywords = [
+      'booster box', 'etb', 'elite trainer box', 'collection box',
+      'tin', 'bundle', 'blister', 'pack', 'case', 'display',
+      'premium collection', 'ultra premium', 'special collection'
+    ]
+    const nameLower = card.name.toLowerCase()
+    const categoryLower = (card.category || '').toLowerCase()
+    const typeLower = (card.type || '').toLowerCase()
+
+    // Check if category or type indicates sealed product
+    if (categoryLower.includes('sealed') || typeLower.includes('sealed')) {
+      return true
+    }
+
+    // Check name for sealed product keywords
+    return sealedKeywords.some(keyword => nameLower.includes(keyword))
   },
 }

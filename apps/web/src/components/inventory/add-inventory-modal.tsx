@@ -44,18 +44,37 @@ const GAME_TYPES: { value: GameType; label: string }[] = [
 
 export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchEnabled, setSearchEnabled] = useState(false)
   const [gameType, setGameType] = useState<GameType>('pokemon')
   const [selectedCard, setSelectedCard] = useState<UnifiedCard | null>(null)
   const [duplicates, setDuplicates] = useState<InventoryItem[]>([])
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false)
   const [pendingSubmitData, setPendingSubmitData] = useState<AddInventoryForm | null>(null)
   const { data: recentCards, isLoading: isLoadingRecent } = useRecentCards(gameType)
-  const { data: searchResults, isLoading: isSearching } = useSearchCards(searchQuery, gameType)
+  const { data: searchResults, isLoading: isSearching } = useSearchCards(searchQuery, gameType, searchEnabled)
   const addItem = useAddInventoryItem()
   const checkDuplicates = useCheckDuplicates()
 
-  const displayCards = searchQuery.length > 2 ? searchResults : recentCards
-  const isLoading = searchQuery.length > 2 ? isSearching : isLoadingRecent
+  const displayCards = searchEnabled && searchQuery.length > 0 ? searchResults : recentCards
+  const isLoading = searchEnabled && searchQuery.length > 0 ? isSearching : isLoadingRecent
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && searchQuery.length > 0) {
+      e.preventDefault()
+      setSearchEnabled(true)
+    }
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    setSearchEnabled(false) // Reset trigger on new input
+  }
+
+  const handleSearchClick = () => {
+    if (searchQuery.length > 0) {
+      setSearchEnabled(true)
+    }
+  }
 
   const {
     register,
@@ -86,10 +105,12 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
       quantity: data.quantity,
       notes: data.notes,
       game_type: selectedCard.gameType,
+      product_type: selectedCard.productType,
     })
     reset()
     setSelectedCard(null)
     setSearchQuery('')
+    setSearchEnabled(false)
     setDuplicates([])
     setPendingSubmitData(null)
     onClose()
@@ -140,6 +161,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
   const handleGameTypeChange = (newGameType: GameType) => {
     setGameType(newGameType)
     setSearchQuery('')
+    setSearchEnabled(false)
     setSelectedCard(null)
   }
 
@@ -181,19 +203,31 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
 
               <div>
                 <label className="text-sm font-semibold mb-3 block text-foreground">
-                  {searchQuery.length > 2 ? 'Search Results' : `Recent ${gameType === 'pokemon' ? 'Pokemon' : 'One Piece'} Cards`}
+                  {searchEnabled && searchQuery.length > 0 ? 'Search Results' : `Recent ${gameType === 'pokemon' ? 'Pokemon' : 'One Piece'} Cards`}
                 </label>
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="Search by card name (e.g., Charizard)"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-xl border border-input bg-background pl-11 pr-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vision-blue/50 transition-all"
-                    autoFocus
-                  />
+                <div className="relative flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search cards or sealed products..."
+                      value={searchQuery}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      className="w-full rounded-xl border border-input bg-background pl-11 pr-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vision-blue/50 transition-all"
+                      autoFocus
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handleSearchClick}
+                    disabled={searchQuery.length === 0}
+                    className="rounded-xl bg-gradient-to-r from-vision-blue to-vision-cyan hover:shadow-lg hover:shadow-vision-blue/20 transition-all"
+                  >
+                    Search
+                  </Button>
                 </div>
+                <p className="text-xs text-muted-foreground mt-2">Press Enter or click Search to find cards and sealed products</p>
               </div>
 
               {isLoading && (
@@ -218,6 +252,11 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                           className="object-contain p-2 group-hover:scale-105 transition-transform"
                           sizes="200px"
                         />
+                        {card.productType === 'sealed' && (
+                          <Badge className="absolute top-2 right-2 bg-amber-500 text-white text-xs">
+                            Sealed
+                          </Badge>
+                        )}
                       </div>
                       <h3 className="font-bold text-sm line-clamp-1">{card.name}</h3>
                       <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{card.setName}</p>
@@ -231,7 +270,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                 </div>
               )}
 
-              {!isLoading && searchQuery.length > 2 && displayCards?.data.length === 0 && (
+              {!isLoading && searchEnabled && searchQuery.length > 0 && displayCards?.data.length === 0 && (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">No cards found. Try a different search.</p>
                 </div>
@@ -250,7 +289,12 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                   />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-xl mb-1">{selectedCard.name}</h3>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-xl">{selectedCard.name}</h3>
+                    {selectedCard.productType === 'sealed' && (
+                      <Badge className="bg-amber-500 text-white text-xs">Sealed</Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground mb-3">{selectedCard.setName}</p>
                   {selectedCard.marketPrice && (
                     <Badge variant="info" className="mb-3 rounded-lg">

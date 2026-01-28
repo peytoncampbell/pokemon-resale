@@ -90,6 +90,7 @@ export type Database = {
           notes: string | null
           procurement_id: string | null
           game_type: 'pokemon' | 'onepiece'
+          product_type: 'card' | 'sealed'
           created_at: string
           updated_at: string
         }
@@ -109,6 +110,7 @@ export type Database = {
           notes?: string | null
           procurement_id?: string | null
           game_type?: 'pokemon' | 'onepiece'
+          product_type?: 'card' | 'sealed'
           created_at?: string
           updated_at?: string
         }
@@ -128,6 +130,7 @@ export type Database = {
           notes?: string | null
           procurement_id?: string | null
           game_type?: 'pokemon' | 'onepiece'
+          product_type?: 'card' | 'sealed'
           created_at?: string
           updated_at?: string
         }
