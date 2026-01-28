@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
   Package,
-  ShoppingCart,
+  ArrowLeftRight,
   LogOut,
   X,
   Building2
@@ -23,7 +23,7 @@ interface SidebarProps {
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Inventory", href: "/inventory", icon: Package },
-  { name: "Procurement", href: "/procurement", icon: ShoppingCart },
+  { name: "Transactions", href: "/transactions", icon: ArrowLeftRight },
   { name: "Organization", href: "/organization", icon: Building2 },
 ]
 

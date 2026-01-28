@@ -342,6 +342,115 @@ export type Database = {
           created_at?: string
         }
       }
+      transactions: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string | null
+          type: 'BUY' | 'SELL' | 'TRADE'
+          counterparty_name: string
+          counterparty_type: 'STORE' | 'PERSON' | 'ONLINE' | 'OTHER' | null
+          platform: string | null
+          cash_out: number
+          cash_in: number
+          fees: number
+          transaction_date: string
+          status: 'PENDING' | 'COMPLETED' | 'CANCELLED'
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id?: string | null
+          type: 'BUY' | 'SELL' | 'TRADE'
+          counterparty_name: string
+          counterparty_type?: 'STORE' | 'PERSON' | 'ONLINE' | 'OTHER' | null
+          platform?: string | null
+          cash_out?: number
+          cash_in?: number
+          fees?: number
+          transaction_date?: string
+          status?: 'PENDING' | 'COMPLETED' | 'CANCELLED'
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string | null
+          type?: 'BUY' | 'SELL' | 'TRADE'
+          counterparty_name?: string
+          counterparty_type?: 'STORE' | 'PERSON' | 'ONLINE' | 'OTHER' | null
+          platform?: string | null
+          cash_out?: number
+          cash_in?: number
+          fees?: number
+          transaction_date?: string
+          status?: 'PENDING' | 'COMPLETED' | 'CANCELLED'
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      transaction_items: {
+        Row: {
+          id: string
+          transaction_id: string
+          direction: 'IN' | 'OUT'
+          card_id: string
+          card_name: string
+          card_image: string | null
+          set_name: string | null
+          game_type: 'pokemon' | 'onepiece'
+          condition: 'NM' | 'LP' | 'MP' | 'HP' | 'DMG'
+          inventory_id: string | null
+          quantity: number
+          unit_value: number
+          total_value: number
+          location: string
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          transaction_id: string
+          direction: 'IN' | 'OUT'
+          card_id: string
+          card_name: string
+          card_image?: string | null
+          set_name?: string | null
+          game_type?: 'pokemon' | 'onepiece'
+          condition?: 'NM' | 'LP' | 'MP' | 'HP' | 'DMG'
+          inventory_id?: string | null
+          quantity?: number
+          unit_value?: number
+          total_value?: number
+          location?: string
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          transaction_id?: string
+          direction?: 'IN' | 'OUT'
+          card_id?: string
+          card_name?: string
+          card_image?: string | null
+          set_name?: string | null
+          game_type?: 'pokemon' | 'onepiece'
+          condition?: 'NM' | 'LP' | 'MP' | 'HP' | 'DMG'
+          inventory_id?: string | null
+          quantity?: number
+          unit_value?: number
+          total_value?: number
+          location?: string
+          notes?: string | null
+          created_at?: string
+        }
+      }
     }
     Functions: {
       get_organization_by_invite_code: {
@@ -370,3 +479,8 @@ export type ProcurementExpectedItem = Database['public']['Tables']['procurement_
 export type ProcurementExpectedItemInsert = Database['public']['Tables']['procurement_expected_items']['Insert']
 export type ProcurementAttachment = Database['public']['Tables']['procurement_attachments']['Row']
 export type ProcurementAttachmentInsert = Database['public']['Tables']['procurement_attachments']['Insert']
+export type Transaction = Database['public']['Tables']['transactions']['Row']
+export type TransactionInsert = Database['public']['Tables']['transactions']['Insert']
+export type TransactionUpdate = Database['public']['Tables']['transactions']['Update']
+export type TransactionItem = Database['public']['Tables']['transaction_items']['Row']
+export type TransactionItemInsert = Database['public']['Tables']['transaction_items']['Insert']
