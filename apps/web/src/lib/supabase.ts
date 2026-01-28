@@ -1,11 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
-
-// Database types matching our schema
+// Database types matching our schema - MUST be defined before createClient
 export type Database = {
   public: {
     Tables: {
@@ -451,6 +446,38 @@ export type Database = {
           created_at?: string
         }
       }
+      price_history: {
+        Row: {
+          id: string
+          organization_id: string
+          card_id: string
+          card_name: string
+          market_price: number
+          source: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          card_id: string
+          card_name: string
+          market_price: number
+          source: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          card_id?: string
+          card_name?: string
+          market_price?: number
+          source?: string
+          created_at?: string
+        }
+      }
+    }
+    Views: {
+      [_ in never]: never
     }
     Functions: {
       get_organization_by_invite_code: {
@@ -458,9 +485,22 @@ export type Database = {
         Returns: { id: string; name: string }[]
       }
     }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
 }
 
+// Create client AFTER Database type is defined
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
+
+// Type exports
 export type Organization = Database['public']['Tables']['organizations']['Row']
 export type OrganizationInsert = Database['public']['Tables']['organizations']['Insert']
 export type OrganizationMember = Database['public']['Tables']['organization_members']['Row']

@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { supabase, type Database } from '@/lib/supabase'
 import { getCurrentOrganizationId } from './use-organization'
+
+type InventoryUpdate = Database['public']['Tables']['inventory']['Update']
 
 export type BulkUpdateData = {
   ids: string[]
@@ -21,7 +23,7 @@ export function useBulkUpdateInventory() {
 
       const { data: result, error } = await supabase
         .from('inventory')
-        .update(updateFields)
+        .update(updateFields as InventoryUpdate)
         .in('id', ids)
         .eq('organization_id', orgId)
         .select()

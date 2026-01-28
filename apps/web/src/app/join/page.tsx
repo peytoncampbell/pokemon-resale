@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,13 +10,13 @@ import { useJoinOrganization, useOrganization } from '@/hooks/use-organization'
 import { useAuthContext } from '@/components/providers/auth-provider'
 import { Loader2, Users } from 'lucide-react'
 
-export default function JoinPage() {
+function JoinPageContent() {
   const searchParams = useSearchParams()
   const codeFromUrl = searchParams.get('code')
-  
+
   const [inviteCode, setInviteCode] = useState(codeFromUrl?.toUpperCase() || '')
   const [error, setError] = useState<string | null>(null)
-  
+
   const router = useRouter()
   const { user, loading: authLoading } = useAuthContext()
   const { data: existingOrg, isLoading: orgLoading } = useOrganization()
@@ -54,7 +54,7 @@ export default function JoinPage() {
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    
+
     if (!inviteCode.trim()) {
       setError('Please enter an invite code')
       return
@@ -127,8 +127,8 @@ export default function JoinPage() {
                 {existingOrg ? 'Go to Dashboard' : 'Back'}
               </Button>
               {!existingOrg && (
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={joinOrg.isPending}
                   className="flex-1"
                 >
@@ -147,5 +147,17 @@ export default function JoinPage() {
         </form>
       </Card>
     </div>
+  )
+}
+
+export default function JoinPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-vision-blue" />
+      </div>
+    }>
+      <JoinPageContent />
+    </Suspense>
   )
 }
