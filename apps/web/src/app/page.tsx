@@ -10,12 +10,14 @@ import { DollarSign, Package, TrendingUp, ShoppingCart, Clock } from "lucide-rea
 import { useInventoryItems } from "@/hooks/use-inventory"
 import { useAnalytics } from "@/hooks/use-analytics"
 import { formatCurrency } from "@/lib/utils"
+import { useCurrency } from "@/hooks/use-currency"
 import Image from "next/image"
 import Link from "next/link"
 
 export default function DashboardPage() {
   const { data: inventory } = useInventoryItems()
   const { data: analytics, isLoading: analyticsLoading } = useAnalytics()
+  const { currency } = useCurrency()
 
   const recentInventory = inventory?.slice(0, 5) || []
 
@@ -39,14 +41,14 @@ export default function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             title="Inventory Value"
-            value={analyticsLoading ? '...' : formatCurrency(analytics?.totalInventoryValue || 0)}
+            value={analyticsLoading ? '...' : formatCurrency(analytics?.totalInventoryValue || 0, currency)}
             icon={DollarSign}
             iconColor="blue"
             trend={{ value: `${analytics?.totalItems || 0} items`, isPositive: true }}
           />
           <MetricCard
             title="Total Invested"
-            value={analyticsLoading ? '...' : formatCurrency(analytics?.totalInvested || 0)}
+            value={analyticsLoading ? '...' : formatCurrency(analytics?.totalInvested || 0, currency)}
             icon={Package}
             iconColor="green"
           />
@@ -55,9 +57,9 @@ export default function DashboardPage() {
             value={analyticsLoading ? '...' : String(analytics?.itemsSold || 0)}
             icon={TrendingUp}
             iconColor="orange"
-            trend={analytics?.totalProfit ? { 
-              value: `${formatCurrency(analytics.totalProfit)} profit`, 
-              isPositive: analytics.totalProfit > 0 
+            trend={analytics?.totalProfit ? {
+              value: `${formatCurrency(analytics.totalProfit, currency)} profit`,
+              isPositive: analytics.totalProfit > 0
             } : undefined}
           />
           <MetricCard
@@ -127,7 +129,7 @@ export default function DashboardPage() {
                       {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                     </p>
                     <p className="font-semibold text-white">{day.itemsAdded} items</p>
-                    <p className="text-sm text-vision-cyan">{formatCurrency(day.value)}</p>
+                    <p className="text-sm text-vision-cyan">{formatCurrency(day.value, currency)}</p>
                   </div>
                 ))}
               </div>
@@ -181,7 +183,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-vision-cyan">{formatCurrency(item.acquisition_cost)}</p>
+                      <p className="font-semibold text-vision-cyan">{formatCurrency(item.acquisition_cost, currency)}</p>
                       <p className="text-sm text-white/60">Qty: {item.quantity}</p>
                     </div>
                   </div>

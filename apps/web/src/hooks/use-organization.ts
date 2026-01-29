@@ -186,41 +186,30 @@ export function useCreateOrganization() {
 // Hook to join organization by invite code
 export function useJoinOrganization() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async (inviteCode: string) => {
-      const userId = await getCurrentUserId()
-      
-      // Find organization by invite code using the function
-      const { data: orgs, error: lookupError } = await supabase
-        .rpc('get_organization_by_invite_code', { code: inviteCode.toUpperCase() })
-      
-      if (lookupError) throw lookupError
-      if (!orgs || orgs.length === 0) throw new Error('Invalid invite code')
-      
-      const org = orgs[0]
-      
-      // Check if already a member
-      const { data: existing } = await supabase
-        .from('organization_members')
-        .select('id')
-        .eq('organization_id', org.id)
-        .eq('user_id', userId)
-        .single()
-      
-      if (existing) throw new Error('You are already a member of this organization')
-      
-      // Add as member
-      const { error: joinError } = await supabase
-        .from('organization_members')
-        .insert({
-          organization_id: org.id,
-          user_id: userId,
-        })
-      
-      if (joinError) throw joinError
-      
-      return org
+      // Use the SECURITY DEFINER function that handles everything
+      // This bypasses RLS issues for new users joining
+      const { data, error } = await supabase
+        .rpc('join_organization_by_invite_code', { invite_code_input: inviteCode })
+
+      if (error) {
+        // Parse the error message from the function
+        if (error.message?.includes('Invalid invite code')) {
+          throw new Error('Invalid invite code')
+        }
+        if (error.message?.includes('already a member')) {
+          throw new Error('You are already a member of this organization')
+        }
+        throw error
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error('Failed to join organization')
+      }
+
+      return { id: data[0].org_id, name: data[0].org_name }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization'] })

@@ -14,6 +14,7 @@ import { formatCurrency } from '@/lib/utils'
 import { DuplicateWarningModal } from './duplicate-warning-modal'
 import type { InventoryItem } from '@/lib/supabase'
 import Image from 'next/image'
+import { useCurrency } from '@/hooks/use-currency'
 
 const CONDITIONS = ['NM', 'LP', 'MP', 'HP', 'DMG'] as const
 
@@ -58,6 +59,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
   const [duplicates, setDuplicates] = useState<InventoryItem[]>([])
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false)
   const [pendingSubmitData, setPendingSubmitData] = useState<AddInventoryForm | null>(null)
+  const { currency } = useCurrency()
 
   // Cards queries
   const { data: recentCards, isLoading: isLoadingRecentCards } = useRecentCards(gameType)
@@ -201,7 +203,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
         className="absolute inset-0 bg-background/90 backdrop-blur-md"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden bg-background rounded-3xl shadow-2xl m-4 flex flex-col border-none">
+      <div className="relative w-full max-w-6xl max-h-[90vh] overflow-hidden bg-background rounded-3xl shadow-2xl m-4 flex flex-col border-none">
         <div className="flex items-center justify-between border-b bg-gradient-to-r from-background to-accent/5 px-6 py-5">
           <h2 className="text-2xl font-bold bg-gradient-to-r from-vision-blue to-vision-cyan bg-clip-text text-transparent">
             Add {productTab === 'cards' ? 'Card' : 'Sealed Product'} to Inventory
@@ -294,12 +296,12 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
               )}
 
               {!isLoading && displayCards && displayCards.data.length > 0 && (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {displayCards.data.map((card) => (
                     <button
                       key={card.id}
                       onClick={() => handleCardSelect(card)}
-                      className="text-left rounded-2xl border-none bg-gradient-to-br from-background to-accent/5 hover:shadow-md transition-all p-4 group"
+                      className="text-left rounded-2xl border-none bg-gradient-to-br from-background to-accent/5 hover:shadow-md transition-all p-3 group"
                     >
                       <div className="aspect-[3/4] bg-accent/10 rounded-xl mb-3 relative overflow-hidden">
                         <Image
@@ -319,7 +321,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                       <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{card.setName}</p>
                       {card.marketPrice && (
                         <p className="text-sm font-bold text-vision-cyan">
-                          ~{formatCurrency(card.marketPrice, 'USD')}
+                          {formatCurrency(card.marketPrice, currency)}
                         </p>
                       )}
                     </button>
@@ -357,7 +359,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
                   <p className="text-sm text-muted-foreground mb-3">{selectedCard.setName}</p>
                   {selectedCard.marketPrice && (
                     <Badge variant="info" className="mb-3 rounded-lg">
-                      Market Price: ~{formatCurrency(selectedCard.marketPrice, 'USD')}
+                      Market Price: {formatCurrency(selectedCard.marketPrice, currency)}
                     </Badge>
                   )}
                   <Button

@@ -3,6 +3,7 @@
 import { Menu, Bell, Search, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuthContext } from "@/components/providers/auth-provider"
+import { useCurrency } from "@/hooks/use-currency"
 
 interface HeaderProps {
   onMenuClick: () => void
@@ -10,6 +11,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const { user } = useAuthContext()
+  const { currency, toggleCurrency } = useCurrency()
 
   return (
     <header className="sticky top-0 z-30 w-full">
@@ -32,6 +34,16 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         {/* Right side */}
         <div className="flex items-center gap-3 ml-auto">
+          {/* Currency Toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleCurrency}
+            className="text-white/60 hover:text-white hover:bg-white/10 font-semibold px-3"
+          >
+            {currency}
+          </Button>
+
           {/* Search */}
           <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10">
             <Search className="h-4 w-4 text-white/40" />

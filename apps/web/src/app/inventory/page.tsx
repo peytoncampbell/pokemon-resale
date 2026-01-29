@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useInventoryItems, useDeleteInventoryItem } from '@/hooks/use-inventory'
 import { useExportInventory } from '@/hooks/use-export'
 import { formatCurrency } from '@/lib/utils'
+import { useCurrency } from '@/hooks/use-currency'
 import { Grid3X3, List, Plus, Search, MapPin, Trash2 } from 'lucide-react'
 import { AddInventoryModal } from '@/components/inventory/add-inventory-modal'
 import { BulkActionBar } from '@/components/inventory/bulk-action-bar'
@@ -39,6 +40,7 @@ export default function InventoryPage() {
   const { data: items, isLoading, error } = useInventoryItems(statusFilter)
   const deleteItem = useDeleteInventoryItem()
   const { exportInventory, isExporting } = useExportInventory()
+  const { currency } = useCurrency()
 
   const filteredItems = items?.filter((item) =>
     searchQuery ? item.card_name.toLowerCase().includes(searchQuery.toLowerCase()) : true
@@ -197,7 +199,7 @@ export default function InventoryPage() {
             </p>
           </div>
           <p className="text-sm font-semibold text-vision-cyan">
-            Total Value: {formatCurrency(totalValue)}
+            Total Value: {formatCurrency(totalValue, currency)}
           </p>
         </div>
 
@@ -264,7 +266,7 @@ export default function InventoryPage() {
                       <div className="flex items-center justify-between pt-2 border-t border-white/10">
                         <div>
                           <p className="text-xs text-white/60 font-medium">Cost</p>
-                          <p className="font-bold text-lg text-vision-cyan">{formatCurrency(item.acquisition_cost)}</p>
+                          <p className="font-bold text-lg text-vision-cyan">{formatCurrency(item.acquisition_cost, currency)}</p>
                           {item.quantity > 1 && (
                             <p className="text-xs text-white/60">Qty: {item.quantity}</p>
                           )}
@@ -326,7 +328,7 @@ export default function InventoryPage() {
                         </Badge>
                       </div>
                       <span className="text-lg font-bold whitespace-nowrap text-vision-cyan">
-                        {formatCurrency(item.acquisition_cost)}
+                        {formatCurrency(item.acquisition_cost, currency)}
                       </span>
                       <Button
                         variant="ghost"

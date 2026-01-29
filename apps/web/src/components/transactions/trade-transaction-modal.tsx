@@ -12,6 +12,7 @@ import { useCreateTransaction, TransactionItemData } from '@/hooks/use-transacti
 import type { GameType, UnifiedCard } from '@/lib/card-types'
 import { formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
+import { useCurrency } from '@/hooks/use-currency'
 
 const CONDITIONS = ['NM', 'LP', 'MP', 'HP', 'DMG'] as const
 const LOCATIONS = ['BIN-01', 'BIN-02', 'BIN-03', 'BIN-04', 'BIN-05', 'BIN-06', 'BIN-07', 'BIN-08', 'BIN-09', 'BIN-10']
@@ -68,6 +69,7 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
   const { data: recentCards, isLoading: isLoadingRecent } = useRecentCards(gameType)
   const { data: searchResults, isLoading: isSearching } = useSearchCards(searchQuery, gameType)
   const createTransaction = useCreateTransaction()
+  const { currency } = useCurrency()
 
   const filteredInventory = inventoryItems?.filter((item) =>
     inventorySearchQuery ? item.card_name.toLowerCase().includes(inventorySearchQuery.toLowerCase()) : true
@@ -329,7 +331,7 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
                         <div className="flex items-center justify-between">
                           <Badge variant="outline">{item.condition}</Badge>
                           <p className="text-sm font-bold text-white/60">
-                            {formatCurrency(item.acquisition_cost)}
+                            {formatCurrency(item.acquisition_cost, currency)}
                           </p>
                         </div>
                       </button>
@@ -346,7 +348,7 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
                         {outItems.length} item{outItems.length !== 1 ? 's' : ''} to give
                       </p>
                       <p className="text-lg font-bold text-red-400">
-                        Value: {formatCurrency(totalOutValue)}
+                        Value: {formatCurrency(totalOutValue, currency)}
                       </p>
                     </div>
                     <Button onClick={() => setStep('receive')} className="bg-vision-purple hover:bg-vision-purple/80">
@@ -431,7 +433,7 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
                         <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{card.setName}</p>
                         {card.marketPrice && (
                           <p className="text-sm font-bold text-green-400">
-                            ~{formatCurrency(card.marketPrice, 'USD')}
+                            {formatCurrency(card.marketPrice, currency)}
                           </p>
                         )}
                       </button>
@@ -446,11 +448,11 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
                     <div className="flex gap-4">
                       <div>
                         <p className="text-xs text-white/40">Giving</p>
-                        <p className="text-sm font-bold text-red-400">{formatCurrency(totalOutValue)}</p>
+                        <p className="text-sm font-bold text-red-400">{formatCurrency(totalOutValue, currency)}</p>
                       </div>
                       <div>
                         <p className="text-xs text-white/40">Receiving</p>
-                        <p className="text-sm font-bold text-green-400">{formatCurrency(totalInValue)}</p>
+                        <p className="text-sm font-bold text-green-400">{formatCurrency(totalInValue, currency)}</p>
                       </div>
                     </div>
                   </div>
@@ -481,7 +483,7 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
                       {outItems.map((oi) => (
                         <div key={oi.item.id} className="flex items-center gap-2 p-2 rounded-lg bg-white/5 text-sm">
                           <span className="truncate flex-1">{oi.item.card_name}</span>
-                          <span className="text-white/60">{formatCurrency(oi.trade_value)}</span>
+                          <span className="text-white/60">{formatCurrency(oi.trade_value, currency)}</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -617,29 +619,29 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
               <div className="p-4 rounded-xl bg-white/5">
                 <div className="flex justify-between text-sm text-white/60 mb-1">
                   <span>Items Given Value:</span>
-                  <span className="text-red-400">-{formatCurrency(totalOutValue)}</span>
+                  <span className="text-red-400">-{formatCurrency(totalOutValue, currency)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-white/60 mb-1">
                   <span>Items Received Value:</span>
-                  <span className="text-green-400">+{formatCurrency(totalInValue)}</span>
+                  <span className="text-green-400">+{formatCurrency(totalInValue, currency)}</span>
                 </div>
                 {cashOut > 0 && (
                   <div className="flex justify-between text-sm text-white/60 mb-1">
                     <span>Cash Paid:</span>
-                    <span className="text-red-400">-{formatCurrency(cashOut)}</span>
+                    <span className="text-red-400">-{formatCurrency(cashOut, currency)}</span>
                   </div>
                 )}
                 {cashIn > 0 && (
                   <div className="flex justify-between text-sm text-white/60 mb-1">
                     <span>Cash Received:</span>
-                    <span className="text-green-400">+{formatCurrency(cashIn)}</span>
+                    <span className="text-green-400">+{formatCurrency(cashIn, currency)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-white/10 mt-2">
                   <span>Net Value:</span>
                   <span className={(totalInValue + cashIn - totalOutValue - cashOut) >= 0 ? 'text-green-400' : 'text-red-400'}>
                     {(totalInValue + cashIn - totalOutValue - cashOut) >= 0 ? '+' : ''}
-                    {formatCurrency(totalInValue + cashIn - totalOutValue - cashOut)}
+                    {formatCurrency(totalInValue + cashIn - totalOutValue - cashOut, currency)}
                   </span>
                 </div>
               </div>

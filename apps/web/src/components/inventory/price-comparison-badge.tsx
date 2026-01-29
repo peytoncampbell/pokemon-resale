@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import { useCurrency } from '@/hooks/use-currency'
 
 interface PriceComparisonBadgeProps {
   acquisitionCost: number
@@ -15,6 +16,8 @@ export function PriceComparisonBadge({
   marketPrice,
   showDifference = false,
 }: PriceComparisonBadgeProps) {
+  const { currency } = useCurrency()
+
   if (!marketPrice) {
     return (
       <Badge variant="outline" className="text-xs text-white/40">
@@ -35,7 +38,7 @@ export function PriceComparisonBadge({
     return (
       <Badge variant="outline" className="text-xs gap-1">
         <Minus className="h-3 w-3" />
-        {showDifference ? formatCurrency(marketPrice) : '~Market'}
+        {showDifference ? formatCurrency(marketPrice, currency) : 'Market'}
       </Badge>
     )
   }
@@ -52,7 +55,7 @@ export function PriceComparisonBadge({
       )}
       {showDifference ? (
         <>
-          {isPositive ? '+' : ''}{formatCurrency(difference)}
+          {isPositive ? '+' : ''}{formatCurrency(difference, currency)}
           <span className="opacity-70">({percentChange.toFixed(0)}%)</span>
         </>
       ) : (

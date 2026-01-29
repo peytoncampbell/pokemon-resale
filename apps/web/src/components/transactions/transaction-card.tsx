@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/utils'
+import { useCurrency } from '@/hooks/use-currency'
 import {
   ShoppingCart,
   DollarSign,
@@ -59,6 +60,7 @@ const COUNTERPARTY_ICONS = {
 
 export function TransactionCard({ transaction, onDelete, isDeleting }: TransactionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const { currency } = useCurrency()
   const config = TYPE_CONFIG[transaction.type]
   const TypeIcon = config.icon
   const CounterpartyIcon = COUNTERPARTY_ICONS[transaction.counterparty_type || 'OTHER']
@@ -115,17 +117,17 @@ export function TransactionCard({ transaction, onDelete, isDeleting }: Transacti
               <div className="text-right">
                 {transaction.type === 'BUY' && (
                   <p className="text-lg font-bold text-red-400">
-                    -{formatCurrency(Number(transaction.cash_out))}
+                    -{formatCurrency(Number(transaction.cash_out), currency)}
                   </p>
                 )}
                 {transaction.type === 'SELL' && (
                   <p className="text-lg font-bold text-green-400">
-                    +{formatCurrency(Number(transaction.cash_in) - Number(transaction.fees))}
+                    +{formatCurrency(Number(transaction.cash_in) - Number(transaction.fees), currency)}
                   </p>
                 )}
                 {transaction.type === 'TRADE' && (
                   <p className={`text-lg font-bold ${netCash >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {netCash >= 0 ? '+' : ''}{formatCurrency(netCash)}
+                    {netCash >= 0 ? '+' : ''}{formatCurrency(netCash, currency)}
                   </p>
                 )}
                 <p className="text-sm text-white/40">{totalItems} item{totalItems !== 1 ? 's' : ''}</p>
@@ -208,7 +210,7 @@ export function TransactionCard({ transaction, onDelete, isDeleting }: Transacti
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-white">
-                          {item.quantity}x @ {formatCurrency(Number(item.unit_value))}
+                          {item.quantity}x @ {formatCurrency(Number(item.unit_value), currency)}
                         </p>
                         <p className="text-sm text-white/60">{item.condition}</p>
                       </div>
@@ -251,7 +253,7 @@ export function TransactionCard({ transaction, onDelete, isDeleting }: Transacti
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-white">
-                          {item.quantity}x @ {formatCurrency(Number(item.unit_value))}
+                          {item.quantity}x @ {formatCurrency(Number(item.unit_value), currency)}
                         </p>
                         <p className="text-sm text-white/60">{item.condition} | {item.location}</p>
                       </div>
@@ -266,19 +268,19 @@ export function TransactionCard({ transaction, onDelete, isDeleting }: Transacti
                 {transaction.type === 'TRADE' && Number(transaction.cash_out) > 0 && (
                   <div className="flex justify-between text-white/60">
                     <span>Cash Out:</span>
-                    <span className="text-red-400">-{formatCurrency(Number(transaction.cash_out))}</span>
+                    <span className="text-red-400">-{formatCurrency(Number(transaction.cash_out), currency)}</span>
                   </div>
                 )}
                 {transaction.type === 'TRADE' && Number(transaction.cash_in) > 0 && (
                   <div className="flex justify-between text-white/60">
                     <span>Cash In:</span>
-                    <span className="text-green-400">+{formatCurrency(Number(transaction.cash_in))}</span>
+                    <span className="text-green-400">+{formatCurrency(Number(transaction.cash_in), currency)}</span>
                   </div>
                 )}
                 {Number(transaction.fees) > 0 && (
                   <div className="flex justify-between text-white/60">
                     <span>Fees:</span>
-                    <span className="text-red-400">-{formatCurrency(Number(transaction.fees))}</span>
+                    <span className="text-red-400">-{formatCurrency(Number(transaction.fees), currency)}</span>
                   </div>
                 )}
               </div>
