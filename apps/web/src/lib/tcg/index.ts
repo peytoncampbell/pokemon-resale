@@ -1,6 +1,12 @@
 // Unified TCG Data Service
 // Exports all TCG data functions and types
 
+// Internal imports first (for use in this module)
+import type { GameType, ProductType, TCGProduct, TCGSearchResponse } from './types'
+import type { TCGPlayerCard } from './tcgplayer-scraper'
+import { cardsApi } from './cards'
+import { sealedApi } from './sealed'
+
 // Types
 export type {
   GameType,
@@ -41,6 +47,17 @@ export { sealedApi, buildSearchUrl as buildSealedSearchUrl } from './sealed'
 // Graded Cards API (eBay scraper)
 export { gradedApi, buildEbaySearchUrl } from './graded'
 
+// TCGPlayer Scraper (Playwright-based)
+export {
+  scrapeTCGPlayer,
+  scrapeSet,
+  searchCards as searchTCGPlayerCards,
+  buildTCGPlayerUrl,
+  TCGPLAYER_GAMES,
+  type TCGPlayerCard,
+  type TCGPlayerSearchOptions,
+} from './tcgplayer-scraper'
+
 // Caching
 export {
   tcgCache,
@@ -50,11 +67,32 @@ export {
   CACHE_DURATIONS,
 } from './cache'
 
-// Unified search across all product types
-import type { GameType, ProductType, TCGProduct, TCGSearchResponse } from './types'
-import { cardsApi } from './cards'
-import { sealedApi } from './sealed'
+// Client-side wrapper for TCGPlayer scraper API
+export const tcgplayerApi = {
+  /**
+   * Search cards via TCGPlayer scraper
+   */
+  async search(gameType: GameType, query: string): Promise<TCGPlayerCard[]> {
+    const params = new URLSearchParams({ game: gameType, q: query })
+    const response = await fetch(`/api/tcg/scrape?${params}`)
+    if (!response.ok) throw new Error('Failed to scrape TCGPlayer')
+    const result = await response.json()
+    return result.data
+  },
 
+  /**
+   * Get cards from a specific set
+   */
+  async getSet(gameType: GameType, setName: string): Promise<TCGPlayerCard[]> {
+    const params = new URLSearchParams({ game: gameType, set: setName })
+    const response = await fetch(`/api/tcg/scrape?${params}`)
+    if (!response.ok) throw new Error('Failed to scrape TCGPlayer')
+    const result = await response.json()
+    return result.data
+  },
+}
+
+// Unified search options
 export interface UnifiedSearchOptions {
   query: string
   gameType: GameType
