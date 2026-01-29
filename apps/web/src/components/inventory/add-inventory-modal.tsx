@@ -296,36 +296,54 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
               )}
 
               {!isLoading && displayCards && displayCards.data.length > 0 && (
-                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                  {displayCards.data.map((card) => (
-                    <button
-                      key={card.id}
-                      onClick={() => handleCardSelect(card)}
-                      className="text-left rounded-2xl border-none bg-gradient-to-br from-background to-accent/5 hover:shadow-md transition-all p-3 group"
-                    >
-                      <div className="aspect-[3/4] bg-accent/10 rounded-xl mb-3 relative overflow-hidden">
-                        <Image
-                          src={card.imageSmall}
-                          alt={card.name}
-                          fill
-                          className="object-contain p-2 group-hover:scale-105 transition-transform"
-                          sizes="200px"
-                        />
-                        {card.productType === 'sealed' && (
-                          <Badge className="absolute top-2 right-2 bg-amber-500 text-white text-xs">
-                            Sealed
-                          </Badge>
-                        )}
-                      </div>
-                      <h3 className="font-bold text-sm line-clamp-1">{card.name}</h3>
-                      <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{card.setName}</p>
-                      {card.marketPrice && (
-                        <p className="text-sm font-bold text-vision-cyan">
-                          {formatCurrency(card.marketPrice, currency)}
-                        </p>
-                      )}
-                    </button>
-                  ))}
+                <div className="border border-white/10 rounded-xl overflow-hidden">
+                  {/* Table Header */}
+                  <div className="grid grid-cols-[50px_1fr_1fr_100px] gap-3 px-4 py-2 bg-accent/10 text-xs font-semibold text-muted-foreground border-b border-white/10">
+                    <div>Image</div>
+                    <div>Name</div>
+                    <div>Set</div>
+                    <div className="text-right">Price</div>
+                  </div>
+                  {/* Table Rows */}
+                  <div className="max-h-[400px] overflow-y-auto">
+                    {displayCards.data.map((card) => (
+                      <button
+                        key={card.id}
+                        onClick={() => handleCardSelect(card)}
+                        className="w-full grid grid-cols-[50px_1fr_1fr_100px] gap-3 px-4 py-2 text-left hover:bg-accent/10 transition-colors border-b border-white/5 last:border-b-0 items-center"
+                      >
+                        <div className="w-10 h-14 bg-accent/10 rounded relative overflow-hidden flex-shrink-0">
+                          <Image
+                            src={card.imageSmall}
+                            alt={card.name}
+                            fill
+                            className="object-contain"
+                            sizes="40px"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm truncate">{card.name}</span>
+                            {card.productType === 'sealed' && (
+                              <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0 flex-shrink-0">
+                                Sealed
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-sm text-muted-foreground truncate">{card.setName}</div>
+                        <div className="text-right">
+                          {card.marketPrice ? (
+                            <span className="text-sm font-bold text-vision-cyan">
+                              {formatCurrency(card.marketPrice, currency)}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
