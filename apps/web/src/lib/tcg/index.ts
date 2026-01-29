@@ -38,8 +38,8 @@ export {
   parseGradingInfo,
 } from './types'
 
-// Cards API (JustTCG)
-export { cardsApi, JUSTTCG_GAME_IDS } from './cards'
+// Cards API (TCGPlayer scraper)
+export { cardsApi } from './cards'
 
 // Sealed Products API (TCGPlayer scraper)
 export { sealedApi, buildSearchUrl as buildSealedSearchUrl } from './sealed'

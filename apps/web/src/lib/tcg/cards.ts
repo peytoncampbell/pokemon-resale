@@ -1,138 +1,91 @@
-// Cards API - Wrapper around JustTCG for unified card data
-// Uses the existing JustTCG proxy at /api/justtcg
+// Cards API - Uses TCGPlayer Playwright scraper for card data
+// Scrapes directly from TCGPlayer via /api/tcg/scrape
 
 import type {
   CardProduct,
   CardVariant,
-  Condition,
   GameType,
   TCGSearchResponse,
 } from './types'
 
-const JUSTTCG_API_BASE = '/api/justtcg'
+const SCRAPER_API_BASE = '/api/tcg/scrape'
 
-// Game IDs used by JustTCG
-export const JUSTTCG_GAME_IDS: Record<GameType, string> = {
-  pokemon: 'pokemon',
-  onepiece: 'one-piece-card-game',
-}
-
-// JustTCG API response types
-interface JustTCGVariant {
-  id: string
-  condition: string
-  printing: string
-  language: string
-  price: number
-  lastUpdated: number
-  priceChange7d?: number | null
-  priceChange30d?: number | null
-  avgPrice?: number | null
-  minPrice?: number | null
-  maxPrice?: number | null
-}
-
-interface JustTCGCard {
-  id: string
+// TCGPlayer card response from scraper
+interface TCGPlayerCard {
+  productId: string
   name: string
-  game: string
-  set: string
-  set_name: string
-  number: string
-  tcgplayerId?: string
-  rarity: string
-  details?: string | null
-  variants: JustTCGVariant[]
-  category?: string
-  type?: string
+  setName: string
+  number: string | null
+  rarity: string | null
+  imageUrl: string
+  marketPrice: number | null
+  lowPrice: number | null
+  productUrl: string
 }
 
-interface JustTCGResponse<T> {
-  data: T
-  meta?: {
+interface ScraperResponse {
+  data: TCGPlayerCard[]
+  meta: {
     total: number
-    limit: number
-    offset: number
-    hasMore: boolean
+    page: number
+    source: string
   }
+  cached: boolean
+  cacheExpires?: string
+  url: string
   error?: string
 }
 
-// Map JustTCG condition names to our condition codes
-function mapCondition(condition: string): Condition {
-  const conditionMap: Record<string, Condition> = {
-    'Near Mint': 'NM',
-    'Lightly Played': 'LP',
-    'Moderately Played': 'MP',
-    'Heavily Played': 'HP',
-    'Damaged': 'DMG',
-  }
-  return conditionMap[condition] || 'NM'
-}
-
-// Transform JustTCG variant to unified CardVariant
-function transformVariant(variant: JustTCGVariant): CardVariant {
-  return {
-    id: variant.id,
-    condition: mapCondition(variant.condition),
-    printing: variant.printing || 'Normal',
-    price: variant.price,
-    priceChange7d: variant.priceChange7d,
-    priceChange30d: variant.priceChange30d,
-  }
-}
-
-// Transform JustTCG card to unified CardProduct
-function transformCard(card: JustTCGCard, gameType: GameType): CardProduct {
-  // Get the Near Mint Normal price as market price
-  const nmVariant = card.variants.find(
-    (v) => v.condition === 'Near Mint' && v.printing === 'Normal'
-  ) || card.variants.find((v) => v.condition === 'Near Mint') || card.variants[0]
-
-  // Get min/max from all variants
-  const prices = card.variants.filter((v) => v.price > 0).map((v) => v.price)
-  const lowPrice = prices.length > 0 ? Math.min(...prices) : null
-  const highPrice = prices.length > 0 ? Math.max(...prices) : null
-
-  return {
-    id: card.id,
-    name: card.name,
-    gameType,
-    productType: 'card',
-    setName: card.set_name,
-    imageUrl: card.tcgplayerId
-      ? `https://tcgplayer-cdn.tcgplayer.com/product/${card.tcgplayerId}_200w.jpg`
-      : '/card-placeholder.png',
-    prices: {
-      market: nmVariant?.price ?? null,
-      low: lowPrice,
-      high: highPrice,
-    },
-    source: 'justtcg',
-    lastUpdated: nmVariant?.lastUpdated
-      ? new Date(nmVariant.lastUpdated * 1000)
-      : new Date(),
-    rarity: card.rarity,
-    number: card.number,
-    tcgplayerId: card.tcgplayerId,
-    variants: card.variants.map(transformVariant),
-  }
-}
-
-// Fetch helper
-async function fetchJustTCG<T>(
-  endpoint: string,
-  params?: Record<string, string>
-): Promise<JustTCGResponse<T>> {
-  const searchParams = new URLSearchParams()
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) searchParams.append(key, value)
+// Transform scraped TCGPlayer card to unified CardProduct
+function transformScrapedCard(card: TCGPlayerCard, gameType: GameType): CardProduct {
+  // Create a single NM variant from the scraped price
+  const variants: CardVariant[] = []
+  if (card.marketPrice !== null) {
+    variants.push({
+      id: `${card.productId}_NM_Normal`,
+      condition: 'NM',
+      printing: 'Normal',
+      price: card.marketPrice,
+      priceChange7d: null,
+      priceChange30d: null,
     })
   }
 
-  const queryString = searchParams.toString()
-  const url = `${JUSTTCG_API_BASE}${endpoint}${queryString ? `?${queryString}` : ''}`
+  return {
+    id: card.productId,
+    name: card.name,
+    gameType,
+    productType: 'card',
+    setName: card.setName,
+    imageUrl: card.imageUrl || '/card-placeholder.png',
+    prices: {
+      market: card.marketPrice,
+      low: card.lowPrice,
+      high: null,
+    },
+    source: 'tcgplayer',
+    lastUpdated: new Date(),
+    rarity: card.rarity || undefined,
+    number: card.number || undefined,
+    tcgplayerId: card.productId,
+    variants,
+  }
+}
+
+// Fetch from scraper API
+async function fetchScraper(
+  gameType: GameType,
+  params: { q?: string; set?: string; page?: number; type?: 'Cards' | 'Sealed Products' }
+): Promise<ScraperResponse> {
+  const searchParams = new URLSearchParams()
+  searchParams.set('game', gameType)
+
+  if (params.q) searchParams.set('q', params.q)
+  if (params.set) searchParams.set('set', params.set)
+  if (params.page) searchParams.set('page', String(params.page))
+  if (params.type) searchParams.set('type', params.type)
+
+  const url = `${SCRAPER_API_BASE}?${searchParams.toString()}`
 
   const response = await fetch(url, {
     headers: {
@@ -142,7 +95,7 @@ async function fetchJustTCG<T>(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
-    throw new Error(errorData.error || `JustTCG API error: ${response.status}`)
+    throw new Error(errorData.error || `Scraper API error: ${response.status}`)
   }
 
   return response.json()
@@ -151,124 +104,123 @@ async function fetchJustTCG<T>(
 // Cards API
 export const cardsApi = {
   /**
-   * Search for cards by query
+   * Search for cards by query using TCGPlayer scraper
    */
   async search(
     query: string,
     gameType: GameType,
     options?: { limit?: number; offset?: number }
   ): Promise<TCGSearchResponse<CardProduct>> {
-    const response = await fetchJustTCG<JustTCGCard[]>('/cards', {
+    const page = options?.offset ? Math.floor(options.offset / 20) + 1 : 1
+
+    const response = await fetchScraper(gameType, {
       q: query,
-      game: JUSTTCG_GAME_IDS[gameType],
-      limit: String(options?.limit ?? 20),
-      condition: 'NM',
-      include_price_history: 'false',
+      page,
+      type: 'Cards',
     })
 
-    const cards = (response.data || []).map((card) => transformCard(card, gameType))
+    const cards = (response.data || []).map((card) => transformScrapedCard(card, gameType))
+
+    // Apply limit if specified (scraper returns all results from page)
+    const limitedCards = options?.limit ? cards.slice(0, options.limit) : cards
 
     return {
-      data: cards,
+      data: limitedCards,
       meta: {
         total: response.meta?.total ?? cards.length,
         limit: options?.limit ?? 20,
         offset: options?.offset ?? 0,
-        hasMore: response.meta?.hasMore ?? false,
+        hasMore: cards.length >= 20, // TCGPlayer typically shows ~24 per page
       },
-      cached: false,
+      cached: response.cached,
     }
   },
 
   /**
-   * Get a single card by ID
+   * Get a single card by ID (searches by product ID)
    */
   async getById(cardId: string, gameType: GameType): Promise<CardProduct | null> {
-    const response = await fetchJustTCG<JustTCGCard[]>('/cards', {
-      id: cardId,
-      condition: 'NM',
-      include_price_history: 'false',
+    // Search for the card by its product ID
+    const response = await fetchScraper(gameType, {
+      q: cardId,
+      type: 'Cards',
     })
 
-    const card = response.data?.[0]
+    const card = response.data?.find((c) => c.productId === cardId)
     if (!card) return null
 
-    return transformCard(card, gameType)
+    return transformScrapedCard(card, gameType)
   },
 
   /**
    * Get cards from a specific set
    */
   async getBySet(
-    setId: string,
+    setName: string,
     gameType: GameType,
     options?: { limit?: number }
   ): Promise<TCGSearchResponse<CardProduct>> {
-    const response = await fetchJustTCG<JustTCGCard[]>('/cards', {
-      game: JUSTTCG_GAME_IDS[gameType],
-      set: setId,
-      limit: String(options?.limit ?? 30),
-      condition: 'NM',
-      include_price_history: 'false',
+    const response = await fetchScraper(gameType, {
+      set: setName,
+      type: 'Cards',
     })
 
-    const cards = (response.data || []).map((card) => transformCard(card, gameType))
+    const cards = (response.data || []).map((card) => transformScrapedCard(card, gameType))
+    const limitedCards = options?.limit ? cards.slice(0, options.limit) : cards
 
     return {
-      data: cards,
+      data: limitedCards,
       meta: {
         total: response.meta?.total ?? cards.length,
         limit: options?.limit ?? 30,
         offset: 0,
-        hasMore: response.meta?.hasMore ?? false,
+        hasMore: cards.length >= 20,
       },
-      cached: false,
+      cached: response.cached,
     }
   },
 
   /**
    * Get cards from the most recent set
+   * Note: This searches for recent popular cards since scraper doesn't have set listing
    */
   async getRecent(
     gameType: GameType,
     options?: { limit?: number }
   ): Promise<TCGSearchResponse<CardProduct>> {
-    // First get the most recent set
-    const setsResponse = await fetchJustTCG<Array<{ id: string; name: string }>>('/sets', {
-      game: JUSTTCG_GAME_IDS[gameType],
-      orderBy: 'release_date',
-      order: 'desc',
+    // Search for recent/popular cards
+    const searchTerm = gameType === 'pokemon' ? 'ex' : 'leader'
+
+    const response = await fetchScraper(gameType, {
+      q: searchTerm,
+      type: 'Cards',
     })
 
-    const latestSet = setsResponse.data?.[0]
-    if (!latestSet) {
-      return {
-        data: [],
-        meta: { total: 0, limit: options?.limit ?? 30, offset: 0, hasMore: false },
-        cached: false,
-      }
-    }
+    const cards = (response.data || []).map((card) => transformScrapedCard(card, gameType))
+    const limitedCards = options?.limit ? cards.slice(0, options.limit) : cards
 
-    return this.getBySet(latestSet.id, gameType, options)
+    return {
+      data: limitedCards,
+      meta: {
+        total: response.meta?.total ?? cards.length,
+        limit: options?.limit ?? 30,
+        offset: 0,
+        hasMore: cards.length >= 20,
+      },
+      cached: response.cached,
+    }
   },
 
   /**
    * Get card with full price history
+   * Note: Scraper doesn't provide history, returns current price only
    */
   async getWithPriceHistory(
     cardId: string,
     gameType: GameType,
-    duration: '7d' | '30d' | '90d' | '180d' = '30d'
+    _duration: '7d' | '30d' | '90d' | '180d' = '30d'
   ): Promise<CardProduct | null> {
-    const response = await fetchJustTCG<JustTCGCard[]>('/cards', {
-      id: cardId,
-      include_price_history: 'true',
-      priceHistoryDuration: duration,
-    })
-
-    const card = response.data?.[0]
-    if (!card) return null
-
-    return transformCard(card, gameType)
+    // Scraper doesn't support price history, just return current card data
+    return this.getById(cardId, gameType)
   },
 }
