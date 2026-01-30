@@ -1,7 +1,6 @@
 'use client'
 
 import { Card, CardContent } from '@/components/ui/card'
-import { formatCurrency } from '@/lib/utils'
 import { ShoppingCart, DollarSign, ArrowLeftRight, TrendingUp, TrendingDown } from 'lucide-react'
 import type { TransactionStats } from '@/hooks/use-transactions'
 import { useCurrency } from '@/hooks/use-currency'
@@ -12,7 +11,7 @@ interface TransactionStatsProps {
 }
 
 export function TransactionStatsCards({ stats, isLoading }: TransactionStatsProps) {
-  const { currency } = useCurrency()
+  const { formatConverted } = useCurrency()
 
   if (isLoading) {
     return (
@@ -33,7 +32,7 @@ export function TransactionStatsCards({ stats, isLoading }: TransactionStatsProp
     {
       label: 'Total Buys',
       value: stats?.totalBuys || 0,
-      subtext: formatCurrency(stats?.totalCashOut || 0, currency),
+      subtext: formatConverted(stats?.totalCashOut || 0),
       icon: ShoppingCart,
       color: 'text-vision-blue',
       bgColor: 'bg-vision-blue/10',
@@ -41,7 +40,7 @@ export function TransactionStatsCards({ stats, isLoading }: TransactionStatsProp
     {
       label: 'Total Sales',
       value: stats?.totalSells || 0,
-      subtext: formatCurrency(stats?.totalCashIn || 0, currency),
+      subtext: formatConverted(stats?.totalCashIn || 0),
       icon: DollarSign,
       color: 'text-green-400',
       bgColor: 'bg-green-400/10',
@@ -56,7 +55,7 @@ export function TransactionStatsCards({ stats, isLoading }: TransactionStatsProp
     },
     {
       label: 'Net Cash Flow',
-      value: formatCurrency(stats?.netCashFlow || 0, currency),
+      value: formatConverted(stats?.netCashFlow || 0),
       subtext: (stats?.netCashFlow || 0) >= 0 ? 'Profit' : 'Spent',
       icon: (stats?.netCashFlow || 0) >= 0 ? TrendingUp : TrendingDown,
       color: (stats?.netCashFlow || 0) >= 0 ? 'text-green-400' : 'text-red-400',

@@ -3,12 +3,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Clock } from 'lucide-react'
 import { useAnalytics } from '@/hooks/use-analytics'
-import { formatCurrency } from '@/lib/utils'
 import { useCurrency } from '@/hooks/use-currency'
 
 export function RecentActivityCard() {
   const { data: analytics } = useAnalytics()
-  const { currency } = useCurrency()
+  const { formatConverted } = useCurrency()
 
   if (!analytics?.recentActivity || analytics.recentActivity.length === 0) {
     return null
@@ -34,7 +33,7 @@ export function RecentActivityCard() {
                 })}
               </p>
               <p className="font-semibold text-white">{day.itemsAdded} items</p>
-              <p className="text-sm text-vision-cyan">{formatCurrency(day.value, currency)}</p>
+              <p className="text-sm text-vision-cyan">{formatConverted(day.value)}</p>
             </div>
           ))}
         </div>

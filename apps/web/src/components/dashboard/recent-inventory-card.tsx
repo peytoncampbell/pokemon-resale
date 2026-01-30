@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge'
 import { SkeletonList } from '@/components/ui/skeleton'
 import { Package } from 'lucide-react'
 import { useInventoryItems } from '@/hooks/use-inventory'
-import { formatCurrency } from '@/lib/utils'
 import { useCurrency } from '@/hooks/use-currency'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -13,7 +12,7 @@ import { useMemo } from 'react'
 
 export function RecentInventoryCard() {
   const { data: inventory, isLoading } = useInventoryItems()
-  const { currency } = useCurrency()
+  const { formatConverted } = useCurrency()
 
   const recentInventory = useMemo(() => inventory?.slice(0, 5) || [], [inventory])
 
@@ -68,7 +67,7 @@ export function RecentInventoryCard() {
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-vision-cyan">
-                    {formatCurrency(item.acquisition_cost, currency)}
+                    {formatConverted(item.acquisition_cost)}
                   </p>
                   <p className="text-sm text-white/60">Qty: {item.quantity}</p>
                 </div>
