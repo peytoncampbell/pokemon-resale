@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyApiAuth } from '@/lib/api-auth'
 
 const JUSTTCG_API_BASE = 'https://api.justtcg.com/v1'
-const API_KEY = process.env.JUSTTCG_API_KEY || ''
+const API_KEY = process.env.JUSTTCG_API_KEY
+
+// Whitelist of allowed API endpoints
+const ALLOWED_ENDPOINTS = ['cards', 'sets', 'games']
 
 // Cache durations based on endpoint type
 const CACHE_DURATIONS = {
@@ -103,8 +107,36 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  // Authentication check
+  const user = await verifyApiAuth()
+  if (!user) {
+    return NextResponse.json(
+      { error: 'Authentication required' },
+      { status: 401 }
+    )
+  }
+
+  // Validate API key is configured
+  if (!API_KEY) {
+    console.error('JUSTTCG_API_KEY is not configured')
+    return NextResponse.json(
+      { error: 'Service temporarily unavailable' },
+      { status: 503 }
+    )
+  }
+
   const { path } = await params
   const pathString = path.filter(Boolean).join('/')
+
+  // Validate endpoint is allowed (prevent SSRF)
+  const baseEndpoint = pathString.split('/')[0]
+  if (!ALLOWED_ENDPOINTS.includes(baseEndpoint)) {
+    return NextResponse.json(
+      { error: 'Invalid endpoint' },
+      { status: 400 }
+    )
+  }
+
   const searchParams = request.nextUrl.searchParams.toString()
   const url = `${JUSTTCG_API_BASE}/${pathString}${searchParams ? `?${searchParams}` : ''}`
   const cacheKey = `justtcg:${pathString}:${searchParams}`
@@ -160,7 +192,7 @@ export async function GET(
   } catch (error) {
     console.error('JustTCG proxy error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch from JustTCG API', details: String(error) },
+      { error: 'Failed to fetch card data' },
       { status: 500 }
     )
   }

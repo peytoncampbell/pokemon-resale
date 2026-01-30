@@ -307,14 +307,18 @@ export function usePendingInvites() {
 // Hook to delete an invite
 export function useDeleteInvite() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async (inviteId: string) => {
+      const orgId = await getCurrentOrganizationId()
+      if (!orgId) throw new Error('No organization')
+
       const { error } = await supabase
         .from('organization_invites')
         .delete()
         .eq('id', inviteId)
-      
+        .eq('organization_id', orgId) // Security: ensure invite belongs to user's org
+
       if (error) throw error
     },
     onSuccess: () => {
@@ -326,14 +330,18 @@ export function useDeleteInvite() {
 // Hook to remove a member
 export function useRemoveMember() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async (memberId: string) => {
+      const orgId = await getCurrentOrganizationId()
+      if (!orgId) throw new Error('No organization')
+
       const { error } = await supabase
         .from('organization_members')
         .delete()
         .eq('id', memberId)
-      
+        .eq('organization_id', orgId) // Security: ensure member belongs to user's org
+
       if (error) throw error
     },
     onSuccess: () => {

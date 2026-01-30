@@ -13,6 +13,7 @@ const PATH_LABELS: Record<string, string> = {
   '/inventory': 'Inventory',
   '/transactions': 'Transactions',
   '/organization': 'Organization',
+  '/settings': 'Settings',
   '/setup': 'Setup',
   '/join': 'Join Organization',
 }

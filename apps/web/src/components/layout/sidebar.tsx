@@ -8,7 +8,8 @@ import {
   ArrowLeftRight,
   LogOut,
   X,
-  Building2
+  Building2,
+  Settings
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -25,6 +26,7 @@ const navigation = [
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Transactions", href: "/transactions", icon: ArrowLeftRight },
   { name: "Organization", href: "/organization", icon: Building2 },
+  { name: "Settings", href: "/settings", icon: Settings },
 ]
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {

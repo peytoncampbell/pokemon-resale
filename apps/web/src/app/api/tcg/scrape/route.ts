@@ -7,19 +7,41 @@ import {
   type TCGPlayerSearchOptions,
 } from '@/lib/tcg/tcgplayer-scraper'
 import { generateCacheKey, tcgCache } from '@/lib/tcg/cache'
+import { verifyApiAuth } from '@/lib/api-auth'
 
 export const maxDuration = 60 // Allow up to 60 seconds for scraping
 export const dynamic = 'force-dynamic'
 
+// Maximum page to prevent abuse
+const MAX_PAGE = 100
+
 export async function GET(request: NextRequest) {
+  // Authentication check
+  const user = await verifyApiAuth()
+  if (!user) {
+    return NextResponse.json(
+      { error: 'Authentication required' },
+      { status: 401 }
+    )
+  }
+
   const searchParams = request.nextUrl.searchParams
   const gameType = (searchParams.get('game') || 'pokemon') as GameType
   const query = searchParams.get('q') || undefined
   const setName = searchParams.get('set') || undefined
   const productType = (searchParams.get('type') || 'Cards') as 'Cards' | 'Sealed Products'
-  const page = parseInt(searchParams.get('page') || '1', 10)
+  const rawPage = parseInt(searchParams.get('page') || '1', 10)
+  const page = Math.min(Math.max(1, rawPage), MAX_PAGE) // Bound between 1 and MAX_PAGE
   const noCache = searchParams.get('nocache') === 'true'
   const debug = searchParams.get('debug') === 'true'
+
+  // Validate product type
+  if (productType !== 'Cards' && productType !== 'Sealed Products') {
+    return NextResponse.json(
+      { error: 'Invalid product type. Must be "Cards" or "Sealed Products"' },
+      { status: 400 }
+    )
+  }
 
   // Validate game type
   if (gameType !== 'pokemon' && gameType !== 'onepiece') {
@@ -98,17 +120,8 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('TCGPlayer scrape API error:', error)
-
-    // Return helpful error with the URL that was attempted
-    const attemptedUrl = buildTCGPlayerUrl({ gameType, query, setName, page, productType })
-
     return NextResponse.json(
-      {
-        error: 'Failed to scrape TCGPlayer',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        attemptedUrl,
-        hint: 'Make sure Chrome/Chromium is installed for local development',
-      },
+      { error: 'Failed to fetch card data' },
       { status: 500 }
     )
   }

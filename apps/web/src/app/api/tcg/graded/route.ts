@@ -7,6 +7,7 @@ import {
   type ScrapedSale,
 } from '@/lib/tcg/graded'
 import { generateCacheKey, tcgCache } from '@/lib/tcg/cache'
+import { verifyApiAuth } from '@/lib/api-auth'
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -120,13 +121,23 @@ function getMockGradedData(
 }
 
 export async function GET(request: NextRequest) {
+  // Authentication check
+  const user = await verifyApiAuth()
+  if (!user) {
+    return NextResponse.json(
+      { error: 'Authentication required' },
+      { status: 401 }
+    )
+  }
+
   const searchParams = request.nextUrl.searchParams
   const cardName = searchParams.get('cardName')
   const gameType = (searchParams.get('game') || 'pokemon') as GameType
   const setName = searchParams.get('set') || undefined
   const cardNumber = searchParams.get('number') || undefined
   const gradingCompany = (searchParams.get('company') || 'PSA') as GradingCompany
-  const grade = parseInt(searchParams.get('grade') || '10', 10)
+  const rawGrade = parseInt(searchParams.get('grade') || '10', 10)
+  const grade = Number.isNaN(rawGrade) ? 10 : Math.min(Math.max(1, rawGrade), 10) // Safe parse with bounds
   const useMock = searchParams.get('mock') === 'true'
 
   // Validate required params
@@ -154,13 +165,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Validate grade
-  if (grade < 1 || grade > 10) {
-    return NextResponse.json(
-      { error: 'Invalid grade. Must be between 1 and 10' },
-      { status: 400 }
-    )
-  }
+  // Grade is already bounded in the parse step above
 
   try {
     // Check cache first
@@ -223,10 +228,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Graded cards API error:', error)
     return NextResponse.json(
-      {
-        error: 'Failed to fetch graded card prices',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { error: 'Failed to fetch graded card prices' },
       { status: 500 }
     )
   }

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { GameType, SealedProduct, SealedType } from '@/lib/tcg/types'
 import { detectSealedType } from '@/lib/tcg/types'
 import { generateCacheKey, tcgCache } from '@/lib/tcg/cache'
+import { verifyApiAuth } from '@/lib/api-auth'
+
+// Maximum allowed limit to prevent DoS
+const MAX_LIMIT = 100
 
 // PriceCharting URLs for sealed products
 const PRICECHARTING_URLS = {
@@ -291,11 +295,21 @@ function getMockSealedProducts(gameType: GameType): SealedProduct[] {
 }
 
 export async function GET(request: NextRequest) {
+  // Authentication check
+  const user = await verifyApiAuth()
+  if (!user) {
+    return NextResponse.json(
+      { error: 'Authentication required' },
+      { status: 401 }
+    )
+  }
+
   const searchParams = request.nextUrl.searchParams
   const gameType = (searchParams.get('game') || 'pokemon') as GameType
   const search = searchParams.get('search') || undefined
   const sealedType = searchParams.get('type') as SealedType | undefined
-  const limit = parseInt(searchParams.get('limit') || '20', 10)
+  const rawLimit = parseInt(searchParams.get('limit') || '20', 10)
+  const limit = Math.min(Math.max(1, rawLimit), MAX_LIMIT) // Bound between 1 and MAX_LIMIT
   const useMock = searchParams.get('mock') === 'true'
 
   // Validate game type
@@ -383,10 +397,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Sealed products API error:', error)
     return NextResponse.json(
-      {
-        error: 'Failed to fetch sealed products',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { error: 'Failed to fetch sealed products' },
       { status: 500 }
     )
   }

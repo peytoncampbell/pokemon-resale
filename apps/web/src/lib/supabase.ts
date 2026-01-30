@@ -531,6 +531,56 @@ export type Database = {
         }
         Relationships: []
       }
+      business_settings: {
+        Row: {
+          id: string
+          organization_id: string
+          initial_investment: number
+          cash_reserves: number
+          historical_inventory_cost: number
+          historical_revenue: number
+          historical_profit: number
+          business_start_date: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          initial_investment?: number
+          cash_reserves?: number
+          historical_inventory_cost?: number
+          historical_revenue?: number
+          historical_profit?: number
+          business_start_date?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          initial_investment?: number
+          cash_reserves?: number
+          historical_inventory_cost?: number
+          historical_revenue?: number
+          historical_profit?: number
+          business_start_date?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'business_settings_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: true
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -619,3 +669,6 @@ export type TransactionInsert = Tables['transactions']['Insert']
 export type TransactionUpdate = Tables['transactions']['Update']
 export type TransactionItem = Tables['transaction_items']['Row']
 export type TransactionItemInsert = Tables['transaction_items']['Insert']
+export type BusinessSettings = Tables['business_settings']['Row']
+export type BusinessSettingsInsert = Tables['business_settings']['Insert']
+export type BusinessSettingsUpdate = Tables['business_settings']['Update']

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { supabase, InventoryItem, Sale } from '@/lib/supabase'
+import { supabase, InventoryItem, Transaction } from '@/lib/supabase'
 import { getCurrentOrganizationId } from './use-organization'
 
 export interface AnalyticsSummary {
@@ -92,14 +92,15 @@ async function fetchAnalyticsClientSide(orgId: string): Promise<AnalyticsSummary
   if (invError) throw invError
   const inventory = inventoryData as InventoryItem[] | null
 
-  // Get all sales
-  const { data: salesData, error: salesError } = await supabase
-    .from('sales')
+  // Get all completed transactions
+  const { data: transactionsData, error: txError } = await supabase
+    .from('transactions')
     .select('*')
     .eq('organization_id', orgId)
+    .eq('status', 'COMPLETED')
 
-  if (salesError) throw salesError
-  const sales = salesData as Sale[] | null
+  if (txError) throw txError
+  const transactions = transactionsData as Transaction[] | null
 
   // Get pending procurements count
   const { count: pendingProcurements, error: procError } = await supabase
@@ -126,20 +127,22 @@ async function fetchAnalyticsClientSide(orgId: string): Promise<AnalyticsSummary
 
   const itemsSold = inventory?.filter((item) => item.status === 'SOLD').length || 0
 
-  // Calculate sales metrics
-  const totalRevenue = sales?.reduce((sum, sale) => sum + sale.sale_price, 0) || 0
+  // Calculate revenue from SELL transactions (cash_in)
+  const sellTransactions = transactions?.filter((t) => t.type === 'SELL') || []
+  const totalRevenue = sellTransactions.reduce((sum, t) => sum + Number(t.cash_in || 0), 0)
 
-  const totalSalesFees =
-    sales?.reduce((sum, sale) => sum + (sale.fees || 0) + (sale.shipping_cost || 0), 0) || 0
+  // Calculate total fees from all transactions
+  const totalFees = transactions?.reduce((sum, t) => sum + Number(t.fees || 0), 0) || 0
 
-  // Get cost of sold items
-  const soldItemIds = sales?.map((s) => s.inventory_id).filter(Boolean) || []
-  const soldItemsCost =
-    inventory
-      ?.filter((item) => soldItemIds.includes(item.id))
-      .reduce((sum, item) => sum + item.acquisition_cost, 0) || 0
+  // Calculate cost of sold items (inventory items marked as SOLD)
+  const soldItems = inventory?.filter((item) => item.status === 'SOLD') || []
+  const soldItemsCost = soldItems.reduce(
+    (sum, item) => sum + item.acquisition_cost * item.quantity,
+    0
+  )
 
-  const totalProfit = totalRevenue - soldItemsCost - totalSalesFees
+  // Profit = Revenue - Cost of Goods Sold - Fees
+  const totalProfit = totalRevenue - soldItemsCost - totalFees
 
   // Inventory by status
   const inventoryByStatus = {
@@ -193,8 +196,8 @@ async function fetchAnalyticsClientSide(orgId: string): Promise<AnalyticsSummary
 export function useAnalytics() {
   return useQuery({
     queryKey: ['analytics'],
-    // Analytics data doesn't change frequently, cache for 5 minutes
-    staleTime: 5 * 60 * 1000,
+    // Refresh analytics more frequently to reflect recent changes
+    staleTime: 30 * 1000, // 30 seconds
     queryFn: async (): Promise<AnalyticsSummary> => {
       const orgId = await getCurrentOrganizationId()
 
