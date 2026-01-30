@@ -14,7 +14,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { currency, toggleCurrency } = useCurrency()
 
   return (
-    <header className="sticky top-0 z-30 w-full">
+    <header className="sticky top-0 z-30 w-full bg-vision-navy/80 backdrop-blur-md border-b border-white/5">
       <div className="flex h-16 items-center px-6 gap-4">
         <Button
           variant="ghost"
@@ -25,12 +25,8 @@ export function Header({ onMenuClick }: HeaderProps) {
           <Menu className="h-6 w-6" />
         </Button>
 
-        {/* Breadcrumb */}
-        <div className="hidden md:flex items-center gap-2 text-sm">
-          <span className="text-white/40">Pages</span>
-          <span className="text-white/40">/</span>
-          <span className="text-white font-medium">Dashboard</span>
-        </div>
+        {/* Spacer for desktop - breadcrumb moved to PageHeader */}
+        <div className="hidden md:block flex-1" />
 
         {/* Right side */}
         <div className="flex items-center gap-3 ml-auto">

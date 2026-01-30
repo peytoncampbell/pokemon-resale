@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
+import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -14,7 +15,21 @@ import { Grid3X3, List, Plus, Search, MapPin, Trash2 } from 'lucide-react'
 import { AddInventoryModal } from '@/components/inventory/add-inventory-modal'
 import { BulkActionBar } from '@/components/inventory/bulk-action-bar'
 import { ExportButton } from '@/components/export/export-button'
+import { TabGroup, type Tab } from '@/components/ui/tab-group'
+import { SummaryBar } from '@/components/ui/summary-bar'
+import { Skeleton, SkeletonInventoryCard } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
+import { AnimatedGrid, AnimatedList } from '@/components/ui/animated-list'
 import Image from 'next/image'
+
+type InventoryStatus = 'IN_STOCK' | 'LISTED' | 'SOLD'
+
+const statusTabs: Tab<InventoryStatus | undefined>[] = [
+  { label: 'All', value: undefined },
+  { label: 'In Stock', value: 'IN_STOCK' },
+  { label: 'Listed', value: 'LISTED' },
+  { label: 'Sold', value: 'SOLD' },
+]
 
 const STATUS_COLORS = {
   IN_STOCK: 'success',
@@ -90,25 +105,17 @@ export default function InventoryPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-white/40">Pages</span>
-          <span className="text-white/40">/</span>
-          <span className="text-white font-medium">Inventory</span>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white mb-1">Inventory</h1>
-            <p className="text-white/60">
-              Manage your Pokemon card collection
-            </p>
-          </div>
-          <Button onClick={() => setIsAddModalOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Item
-          </Button>
-        </div>
+        {/* Page Header */}
+        <PageHeader
+          title="Inventory"
+          description="Manage your Pokemon card collection"
+          actions={
+            <Button onClick={() => setIsAddModalOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Item
+            </Button>
+          }
+        />
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1 max-w-md">
@@ -143,72 +150,34 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-2">
-          <button
-            onClick={() => setStatusFilter(undefined)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              !statusFilter
-                ? 'bg-gradient-to-r from-vision-blue to-vision-cyan text-white shadow-lg shadow-vision-blue/25'
-                : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setStatusFilter('IN_STOCK')}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              statusFilter === 'IN_STOCK'
-                ? 'bg-gradient-to-r from-vision-blue to-vision-cyan text-white shadow-lg shadow-vision-blue/25'
-                : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            In Stock
-          </button>
-          <button
-            onClick={() => setStatusFilter('LISTED')}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              statusFilter === 'LISTED'
-                ? 'bg-gradient-to-r from-vision-blue to-vision-cyan text-white shadow-lg shadow-vision-blue/25'
-                : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            Listed
-          </button>
-          <button
-            onClick={() => setStatusFilter('SOLD')}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              statusFilter === 'SOLD'
-                ? 'bg-gradient-to-r from-vision-blue to-vision-cyan text-white shadow-lg shadow-vision-blue/25'
-                : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            Sold
-          </button>
-        </div>
+        <TabGroup
+          tabs={statusTabs}
+          value={statusFilter}
+          onChange={setStatusFilter}
+        />
 
-        <div className="flex items-center justify-between glass-card px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Checkbox
-              checked={isAllSelected}
-              indeterminate={isIndeterminate}
-              onChange={toggleSelectAll}
-              aria-label="Select all items"
-            />
-            <p className="text-sm font-semibold text-white">
-              {filteredItems?.length || 0} items
-            </p>
-          </div>
-          <p className="text-sm font-semibold text-vision-cyan">
-            Total Value: {formatCurrency(totalValue, currency)}
-          </p>
-        </div>
+        <SummaryBar
+          left={
+            <>
+              <Checkbox
+                checked={isAllSelected}
+                indeterminate={isIndeterminate}
+                onChange={toggleSelectAll}
+                aria-label="Select all items"
+              />
+              <p className="text-sm font-semibold text-white">
+                {filteredItems?.length || 0} items
+              </p>
+            </>
+          }
+          right={`Total Value: ${formatCurrency(totalValue, currency)}`}
+        />
 
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-vision-blue border-r-transparent"></div>
-              <p className="mt-2 text-sm text-white/60">Loading inventory...</p>
-            </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <SkeletonInventoryCard key={i} />
+            ))}
           </div>
         )}
 
@@ -221,7 +190,7 @@ export default function InventoryPage() {
         {!isLoading && !error && filteredItems && (
           <>
             {viewMode === 'grid' ? (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <AnimatedGrid className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredItems.map((item) => (
                   <Card key={item.id} className={`overflow-hidden hover:shadow-lg hover:shadow-vision-blue/10 transition-all group ${selectedIds.includes(item.id) ? 'ring-2 ring-vision-cyan' : ''}`}>
                     <div className="aspect-[3/4] bg-white/5 flex items-center justify-center relative">
@@ -284,9 +253,9 @@ export default function InventoryPage() {
                     </CardContent>
                   </Card>
                 ))}
-              </div>
+              </AnimatedGrid>
             ) : (
-              <div className="space-y-3">
+              <AnimatedList className="space-y-3">
                 {filteredItems.map((item) => (
                   <Card key={item.id} className={`hover:shadow-lg hover:shadow-vision-blue/10 transition-all ${selectedIds.includes(item.id) ? 'ring-2 ring-vision-cyan' : ''}`}>
                     <CardContent className="flex items-center gap-4 p-5">
@@ -342,25 +311,35 @@ export default function InventoryPage() {
                     </CardContent>
                   </Card>
                 ))}
-              </div>
+              </AnimatedList>
             )}
 
             {filteredItems.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16">
-                <div className="h-28 w-28 rounded-3xl bg-white/5 flex items-center justify-center mb-6 border border-white/10">
-                  <Plus className="h-14 w-14 text-white/40" />
-                </div>
-                <h3 className="text-2xl font-bold mb-2 text-white">No inventory items found</h3>
-                <p className="text-white/60 mb-6 text-center max-w-md">
-                  {searchQuery || statusFilter
+              <EmptyState
+                variant={searchQuery || statusFilter ? 'search' : 'inventory'}
+                title={searchQuery || statusFilter ? 'No items found' : 'No inventory yet'}
+                description={
+                  searchQuery || statusFilter
                     ? 'Try adjusting your filters to see more results'
-                    : 'Get started by adding your first Pokemon card to the inventory'}
-                </p>
-                <Button onClick={() => setIsAddModalOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Card
-                </Button>
-              </div>
+                    : 'Get started by adding your first Pokemon card to the inventory'
+                }
+                action={{
+                  label: searchQuery || statusFilter ? 'Clear Filters' : 'Add Card',
+                  onClick: () => {
+                    if (searchQuery || statusFilter) {
+                      setSearchQuery('')
+                      setStatusFilter(undefined)
+                    } else {
+                      setIsAddModalOpen(true)
+                    }
+                  },
+                }}
+                secondaryAction={
+                  searchQuery || statusFilter
+                    ? { label: 'Add Card', onClick: () => setIsAddModalOpen(true) }
+                    : undefined
+                }
+              />
             )}
           </>
         )}

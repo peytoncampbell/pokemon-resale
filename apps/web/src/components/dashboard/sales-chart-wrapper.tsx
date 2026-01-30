@@ -1,11 +1,12 @@
 'use client'
 
 import { SalesChart } from './sales-chart'
+import { SkeletonChart } from '@/components/ui/skeleton'
 import { useAnalytics } from '@/hooks/use-analytics'
 import { useMemo } from 'react'
 
 export function SalesChartWrapper() {
-  const { data: analytics } = useAnalytics()
+  const { data: analytics, isLoading } = useAnalytics()
 
   const salesData = useMemo(() => {
     return (
@@ -15,6 +16,10 @@ export function SalesChartWrapper() {
       })) || []
     )
   }, [analytics?.recentActivity])
+
+  if (isLoading) {
+    return <SkeletonChart />
+  }
 
   return (
     <SalesChart

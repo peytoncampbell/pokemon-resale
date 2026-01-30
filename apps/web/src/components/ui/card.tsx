@@ -7,9 +7,10 @@ const cardVariants = cva(
   {
     variants: {
       variant: {
-        default: "glass-card hover:border-white/20 hover:shadow-lg hover:shadow-vision-blue/5",
-        solid: "bg-vision-navy-light border border-white/10 hover:border-white/20 hover:shadow-lg hover:shadow-vision-blue/5",
+        default: "glass-card hover:border-white/20 hover:shadow-lg hover:shadow-vision-blue/5 hover:-translate-y-0.5",
+        solid: "bg-vision-navy-light border border-white/10 hover:border-white/20 hover:shadow-lg hover:shadow-vision-blue/5 hover:-translate-y-0.5",
         transparent: "bg-transparent",
+        interactive: "glass-card hover:border-white/20 hover:shadow-xl hover:shadow-vision-blue/10 hover:-translate-y-1 cursor-pointer active:translate-y-0 active:shadow-md",
       },
     },
     defaultVariants: {

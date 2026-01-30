@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { SkeletonList } from '@/components/ui/skeleton'
 import { Package } from 'lucide-react'
 import { useInventoryItems } from '@/hooks/use-inventory'
 import { formatCurrency } from '@/lib/utils'
@@ -11,10 +12,14 @@ import Link from 'next/link'
 import { useMemo } from 'react'
 
 export function RecentInventoryCard() {
-  const { data: inventory } = useInventoryItems()
+  const { data: inventory, isLoading } = useInventoryItems()
   const { currency } = useCurrency()
 
   const recentInventory = useMemo(() => inventory?.slice(0, 5) || [], [inventory])
+
+  if (isLoading) {
+    return <SkeletonList rows={5} />
+  }
 
   return (
     <Card>

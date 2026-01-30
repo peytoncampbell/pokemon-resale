@@ -1,7 +1,7 @@
 'use client'
 
 import { MainLayout } from '@/components/layout/main-layout'
-import { WelcomeBanner } from '@/components/dashboard/welcome-banner'
+import { PageHeader } from '@/components/layout/page-header'
 import { DashboardMetrics } from '@/components/dashboard/dashboard-metrics'
 import { InventoryStatusCard } from '@/components/dashboard/inventory-status-card'
 import { SalesChartWrapper } from '@/components/dashboard/sales-chart-wrapper'
@@ -12,24 +12,24 @@ export default function DashboardPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-white/40">Pages</span>
-          <span className="text-white/40">/</span>
-          <span className="text-white font-medium">Dashboard</span>
-        </div>
+        {/* Page Header */}
+        <PageHeader
+          title="Dashboard"
+          description="Track your Pokemon card inventory and monitor your sales."
+        />
 
         {/* Metric Cards Row */}
         <DashboardMetrics />
 
-        {/* Welcome Banner */}
-        <WelcomeBanner />
-
-        {/* Inventory by Status */}
-        <InventoryStatusCard />
-
-        {/* Sales Chart */}
-        <SalesChartWrapper />
+        {/* Two Column Layout: Chart + Status */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <SalesChartWrapper />
+          </div>
+          <div>
+            <InventoryStatusCard />
+          </div>
+        </div>
 
         {/* Recent Activity */}
         <RecentActivityCard />

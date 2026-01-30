@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
+import { PageHeader } from '@/components/layout/page-header'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -99,25 +100,16 @@ export default function OrganizationPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-white/40">Pages</span>
-          <span className="text-white/40">/</span>
-          <span className="text-white font-medium">Organization</span>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white mb-1">Organization Settings</h1>
-            <p className="text-white/60">
-              Manage your team and organization settings
-            </p>
-          </div>
-          <Button onClick={() => setIsInviteModalOpen(true)}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Invite Member
-          </Button>
-        </div>
+        <PageHeader
+          title="Organization Settings"
+          description="Manage your team and organization settings"
+          actions={
+            <Button onClick={() => setIsInviteModalOpen(true)}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Invite Member
+            </Button>
+          }
+        />
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Organization Info */}
