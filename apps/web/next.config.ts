@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Mark playwright packages as external - they're only used server-side
+  serverExternalPackages: ['playwright-core', '@sparticuz/chromium'],
   images: {
     remotePatterns: [
       {
@@ -13,11 +15,12 @@ const nextConfig: NextConfig = {
         hostname: "tcgplayer-cdn.tcgplayer.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "storage.googleapis.com",
+        pathname: "/**",
+      },
     ],
-  },
-  // Skip TypeScript errors during build (temporary - Supabase types need fixing)
-  typescript: {
-    ignoreBuildErrors: true,
   },
 };
 

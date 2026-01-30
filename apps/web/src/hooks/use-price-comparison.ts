@@ -93,14 +93,14 @@ export function usePriceComparisons() {
 
       const { data: latestPrices } = await supabase
         .from('price_history')
-        .select('card_id, market_price, recorded_at')
+        .select('card_id, market_price, created_at')
         .eq('organization_id', orgId)
-        .order('recorded_at', { ascending: false })
+        .order('created_at', { ascending: false })
 
       const priceMap = new Map<string, { price: number; date: string }>()
-      latestPrices?.forEach((p: { card_id: string; market_price: number; recorded_at: string }) => {
+      latestPrices?.forEach((p) => {
         if (!priceMap.has(p.card_id)) {
-          priceMap.set(p.card_id, { price: p.market_price, date: p.recorded_at })
+          priceMap.set(p.card_id, { price: p.market_price, date: p.created_at })
         }
       })
 

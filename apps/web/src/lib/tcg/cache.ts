@@ -209,7 +209,8 @@ export const tcgCache = {
       source: DataSource
     }
   ): Promise<void> {
-    const ttlMs = CACHE_DURATIONS[options.productType]
+    const durationKey = options.productType === 'card' ? 'cards' : options.productType
+    const ttlMs = CACHE_DURATIONS[durationKey]
 
     // Set in memory cache
     memCache.set(key, data, ttlMs)

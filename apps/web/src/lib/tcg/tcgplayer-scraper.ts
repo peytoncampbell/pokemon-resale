@@ -229,8 +229,10 @@ export function isServerless(): boolean {
 export async function getBrowser() {
   if (isServerless()) {
     // Use @sparticuz/chromium for serverless
-    const chromium = await import('@sparticuz/chromium')
-    const { chromium: playwright } = await import('playwright-core')
+    // @ts-ignore - dynamic import with webpackIgnore
+    const chromium = await import(/* webpackIgnore: true */ '@sparticuz/chromium')
+    // @ts-ignore - dynamic import with webpackIgnore
+    const { chromium: playwright } = await import(/* webpackIgnore: true */ 'playwright-core')
 
     const browser = await playwright.launch({
       args: chromium.default.args,
@@ -240,7 +242,8 @@ export async function getBrowser() {
     return browser
   } else {
     // Local development - use regular playwright
-    const { chromium } = await import('playwright-core')
+    // @ts-ignore - dynamic import with webpackIgnore
+    const { chromium } = await import(/* webpackIgnore: true */ 'playwright-core')
 
     // Try to find local Chrome/Chromium installation
     const possiblePaths = [

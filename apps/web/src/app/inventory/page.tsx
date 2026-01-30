@@ -32,7 +32,7 @@ const CONDITION_LABELS = {
 
 export default function InventoryPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [statusFilter, setStatusFilter] = useState<string | undefined>()
+  const [statusFilter, setStatusFilter] = useState<'IN_STOCK' | 'LISTED' | 'SOLD' | undefined>()
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])

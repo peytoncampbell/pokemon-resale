@@ -1,21 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase, Organization, OrganizationMember, OrganizationInvite } from '@/lib/supabase'
+import { getCurrentUserId, getCurrentUserEmail } from '@/lib/auth-helpers'
 
 export type { Organization, OrganizationMember, OrganizationInvite }
-
-// Helper to get current user ID
-async function getCurrentUserId(): Promise<string> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-  return user.id
-}
-
-// Helper to get current user email
-async function getCurrentUserEmail(): Promise<string> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || !user.email) throw new Error('Not authenticated')
-  return user.email
-}
 
 // Generate an 8-character invite code
 function generateInviteCode(): string {

@@ -1,6 +1,8 @@
 // eBay Graded Cards Scraper
 // Scrapes sold listings for graded card pricing data
+// Uses cheerio for robust HTML parsing instead of fragile regex
 
+import * as cheerio from 'cheerio'
 import type {
   GameType,
   GradedCard,
@@ -57,40 +59,46 @@ interface ScrapedSale {
 }
 
 /**
- * Parse eBay sold listings HTML
+ * Parse eBay sold listings HTML using cheerio
+ * More robust than regex-based parsing
  */
 export function parseSoldListings(html: string): ScrapedSale[] {
   const sales: ScrapedSale[] = []
+  const $ = cheerio.load(html)
 
-  // eBay uses srp-results for search results
-  // Each item has s-item class
-  const itemRegex = /<li[^>]*class="[^"]*s-item[^"]*"[^>]*>([\s\S]*?)<\/li>/gi
-  const itemMatches = Array.from(html.matchAll(itemRegex))
-
-  for (const match of itemMatches) {
-    const itemHtml = match[1]
+  // eBay uses s-item class for search result items
+  $('li.s-item').each((_, element) => {
+    const $item = $(element)
 
     // Skip promotional items
-    if (itemHtml.includes('s-item__ad')) continue
+    if ($item.find('.s-item__ad').length > 0) return
 
-    // Extract title
-    const titleMatch =
-      itemHtml.match(/class="[^"]*s-item__title[^"]*"[^>]*>(?:<span[^>]*>)?([^<]+)/i) ||
-      itemHtml.match(/aria-label="([^"]+)"/i)
-    const title = titleMatch?.[1]?.trim() || ''
+    // Extract title - try multiple selectors
+    let title = $item.find('.s-item__title span').first().text().trim()
+    if (!title) {
+      title = $item.find('.s-item__title').first().text().trim()
+    }
+    if (!title) {
+      title = $item.attr('aria-label') || ''
+    }
 
     // Skip if no title or if it's a header row
-    if (!title || title === 'Shop on eBay') continue
+    if (!title || title === 'Shop on eBay') return
 
-    // Extract price - look for POSITIVE or sold price
-    const priceMatch =
-      itemHtml.match(/class="[^"]*s-item__price[^"]*"[^>]*>\$?([\d,]+\.?\d*)/i) ||
-      itemHtml.match(/class="[^"]*POSITIVE[^"]*"[^>]*>\$?([\d,]+\.?\d*)/i)
-    const price = priceMatch ? parseFloat(priceMatch[1].replace(',', '')) : null
+    // Extract price - try multiple selectors
+    let priceText = $item.find('.s-item__price').first().text().trim()
+    if (!priceText) {
+      priceText = $item.find('.POSITIVE').first().text().trim()
+    }
+
+    // Parse price - remove currency symbol and commas
+    const priceMatch = priceText.match(/[\d,]+\.?\d*/)
+    const price = priceMatch ? parseFloat(priceMatch[0].replace(/,/g, '')) : null
 
     // Extract sold date
-    const dateMatch = itemHtml.match(/Sold\s+(\w+\s+\d+,?\s*\d*)/i)
     let soldDate = new Date()
+    const soldText = $item.find('.s-item__ended-date, .s-item__endedDate').text()
+    const dateMatch = soldText.match(/Sold\s+(\w+\s+\d+,?\s*\d*)/i)
     if (dateMatch) {
       const parsed = new Date(dateMatch[1])
       if (!isNaN(parsed.getTime())) {
@@ -98,9 +106,11 @@ export function parseSoldListings(html: string): ScrapedSale[] {
       }
     }
 
-    // Extract image
-    const imgMatch = itemHtml.match(/src="([^"]+ebayimg[^"]+)"/i)
-    const imageUrl = imgMatch?.[1]
+    // Extract image URL
+    const imageUrl =
+      $item.find('img[src*="ebayimg"]').attr('src') ||
+      $item.find('.s-item__image-img').attr('src') ||
+      undefined
 
     if (title && price && price > 0) {
       sales.push({
@@ -110,7 +120,7 @@ export function parseSoldListings(html: string): ScrapedSale[] {
         imageUrl,
       })
     }
-  }
+  })
 
   return sales
 }

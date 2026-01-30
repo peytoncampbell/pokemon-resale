@@ -9,6 +9,7 @@ import {
   InventoryInsert,
 } from '@/lib/supabase'
 import { getCurrentOrganizationId } from './use-organization'
+import { getCurrentUserId } from '@/lib/auth-helpers'
 
 export type { Transaction, TransactionItem }
 
@@ -65,12 +66,6 @@ export interface CreateTransactionData {
   items: TransactionItemData[]
 }
 
-async function getCurrentUserId(): Promise<string> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-  return user.id
-}
-
 // List transactions with optional filters
 export function useTransactions(filters?: TransactionFilters) {
   return useQuery({
@@ -103,7 +98,8 @@ export function useTransactions(filters?: TransactionFilters) {
 
       if (error) throw error
 
-      return data as TransactionWithItems[]
+      // Type assertion needed because Supabase types don't understand joins
+      return data as unknown as TransactionWithItems[]
     },
   })
 }
@@ -125,7 +121,8 @@ export function useTransaction(id: string) {
 
       if (error) throw error
 
-      return data as TransactionWithItems
+      // Type assertion needed because Supabase types don't understand joins
+      return data as unknown as TransactionWithItems
     },
     enabled: !!id,
   })
@@ -339,7 +336,9 @@ export function useDeleteTransaction() {
 
       if (fetchError) throw fetchError
 
-      const items = transaction.transaction_items as TransactionItem[]
+      // Type assertion needed because Supabase types don't understand joins
+      const typedTransaction = transaction as unknown as TransactionWithItems
+      const items = typedTransaction.transaction_items
 
       // 2. Revert inventory changes
       for (const item of items) {

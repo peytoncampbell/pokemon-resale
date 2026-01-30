@@ -3,6 +3,7 @@ import { supabase, InventoryItem, InventoryInsert } from '@/lib/supabase'
 import { cardApi } from '@/lib/card-api'
 import type { GameType } from '@/lib/card-types'
 import { getCurrentOrganizationId } from './use-organization'
+import { getCurrentUserId } from '@/lib/auth-helpers'
 
 export type { InventoryItem }
 
@@ -33,19 +34,19 @@ export interface UpdateInventoryData {
   procurement_id?: string
 }
 
-async function getCurrentUserId(): Promise<string> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-  return user.id
+// Type for optimistic update context
+interface OptimisticContext {
+  previousItems?: InventoryItem[]
+  previousItem?: InventoryItem
 }
 
-export function useInventoryItems(statusFilter?: string) {
+export function useInventoryItems(statusFilter?: 'IN_STOCK' | 'LISTED' | 'SOLD') {
   return useQuery({
     queryKey: ['inventory', 'items', statusFilter],
     queryFn: async () => {
       const orgId = await getCurrentOrganizationId()
       if (!orgId) return []
-      
+
       let query = supabase
         .from('inventory')
         .select('*')
@@ -71,7 +72,7 @@ export function useInventoryItem(id: string) {
     queryFn: async () => {
       const orgId = await getCurrentOrganizationId()
       if (!orgId) throw new Error('No organization')
-      
+
       const { data, error } = await supabase
         .from('inventory')
         .select('*')
@@ -95,7 +96,7 @@ export function useAddInventoryItem() {
       const userId = await getCurrentUserId()
       const orgId = await getCurrentOrganizationId()
       if (!orgId) throw new Error('No organization')
-      
+
       const insertData: InventoryInsert = {
         user_id: userId,
         organization_id: orgId,
@@ -124,7 +125,52 @@ export function useAddInventoryItem() {
 
       return result
     },
-    onSuccess: () => {
+    // Optimistic update
+    onMutate: async (newData) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['inventory', 'items'] })
+
+      // Snapshot the previous value
+      const previousItems = queryClient.getQueryData<InventoryItem[]>(['inventory', 'items', undefined])
+
+      // Create optimistic item
+      const optimisticItem: InventoryItem = {
+        id: `temp-${Date.now()}`, // Temporary ID
+        user_id: 'temp',
+        organization_id: 'temp',
+        card_id: newData.card_id,
+        card_name: newData.card_name,
+        card_image: newData.card_image || null,
+        set_name: newData.set_name || null,
+        location: newData.location,
+        condition: newData.condition || 'NM',
+        acquisition_cost: newData.acquisition_cost,
+        quantity: newData.quantity || 1,
+        status: newData.status || 'IN_STOCK',
+        notes: newData.notes || null,
+        procurement_id: newData.procurement_id || null,
+        game_type: newData.game_type || 'pokemon',
+        product_type: newData.product_type || 'card',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+
+      // Optimistically update the cache
+      queryClient.setQueryData<InventoryItem[]>(
+        ['inventory', 'items', undefined],
+        (old) => old ? [optimisticItem, ...old] : [optimisticItem]
+      )
+
+      return { previousItems } as OptimisticContext
+    },
+    onError: (_err, _newData, context) => {
+      // Rollback on error
+      if (context?.previousItems) {
+        queryClient.setQueryData(['inventory', 'items', undefined], context.previousItems)
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success to sync with server
       queryClient.invalidateQueries({ queryKey: ['inventory'] })
     },
   })
@@ -138,7 +184,7 @@ export function useUpdateInventoryItem() {
       const orgId = await getCurrentOrganizationId()
       if (!orgId) throw new Error('No organization')
       const { id, ...updateData } = data
-      
+
       const { data: result, error } = await supabase
         .from('inventory')
         .update(updateData)
@@ -151,7 +197,47 @@ export function useUpdateInventoryItem() {
 
       return result
     },
-    onSuccess: () => {
+    // Optimistic update
+    onMutate: async (updateData) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['inventory', 'items'] })
+      await queryClient.cancelQueries({ queryKey: ['inventory', 'item', updateData.id] })
+
+      // Snapshot the previous values
+      const previousItems = queryClient.getQueryData<InventoryItem[]>(['inventory', 'items', undefined])
+      const previousItem = queryClient.getQueryData<InventoryItem>(['inventory', 'item', updateData.id])
+
+      // Optimistically update the list cache
+      queryClient.setQueryData<InventoryItem[]>(
+        ['inventory', 'items', undefined],
+        (old) => old?.map((item) =>
+          item.id === updateData.id
+            ? { ...item, ...updateData, updated_at: new Date().toISOString() }
+            : item
+        )
+      )
+
+      // Optimistically update the individual item cache
+      if (previousItem) {
+        queryClient.setQueryData<InventoryItem>(
+          ['inventory', 'item', updateData.id],
+          { ...previousItem, ...updateData, updated_at: new Date().toISOString() }
+        )
+      }
+
+      return { previousItems, previousItem } as OptimisticContext
+    },
+    onError: (_err, updateData, context) => {
+      // Rollback on error
+      if (context?.previousItems) {
+        queryClient.setQueryData(['inventory', 'items', undefined], context.previousItems)
+      }
+      if (context?.previousItem) {
+        queryClient.setQueryData(['inventory', 'item', updateData.id], context.previousItem)
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success
       queryClient.invalidateQueries({ queryKey: ['inventory'] })
     },
   })
@@ -164,7 +250,7 @@ export function useDeleteInventoryItem() {
     mutationFn: async (id: string) => {
       const orgId = await getCurrentOrganizationId()
       if (!orgId) throw new Error('No organization')
-      
+
       const { error } = await supabase
         .from('inventory')
         .delete()
@@ -173,7 +259,33 @@ export function useDeleteInventoryItem() {
 
       if (error) throw error
     },
-    onSuccess: () => {
+    // Optimistic update
+    onMutate: async (deletedId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['inventory', 'items'] })
+
+      // Snapshot the previous value
+      const previousItems = queryClient.getQueryData<InventoryItem[]>(['inventory', 'items', undefined])
+
+      // Optimistically remove from cache
+      queryClient.setQueryData<InventoryItem[]>(
+        ['inventory', 'items', undefined],
+        (old) => old?.filter((item) => item.id !== deletedId)
+      )
+
+      // Also remove from individual item cache
+      queryClient.removeQueries({ queryKey: ['inventory', 'item', deletedId] })
+
+      return { previousItems } as OptimisticContext
+    },
+    onError: (_err, _deletedId, context) => {
+      // Rollback on error
+      if (context?.previousItems) {
+        queryClient.setQueryData(['inventory', 'items', undefined], context.previousItems)
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success
       queryClient.invalidateQueries({ queryKey: ['inventory'] })
     },
   })

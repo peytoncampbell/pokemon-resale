@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Database types matching our schema - MUST be defined before createClient
+// Database types matching our schema
+// To regenerate types from the database:
+//   npm run db:types        - Generate from remote (requires SUPABASE_PROJECT_ID env var)
+//   npm run db:types:local  - Generate from local Supabase instance
 export type Database = {
   public: {
     Tables: {
@@ -26,6 +29,7 @@ export type Database = {
           created_by?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       organization_members: {
         Row: {
@@ -46,6 +50,7 @@ export type Database = {
           user_id?: string
           joined_at?: string
         }
+        Relationships: []
       }
       organization_invites: {
         Row: {
@@ -72,6 +77,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
         }
+        Relationships: []
       }
       inventory: {
         Row: {
@@ -134,6 +140,7 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       procurements: {
         Row: {
@@ -178,6 +185,7 @@ export type Database = {
           notes?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       sales: {
         Row: {
@@ -216,6 +224,7 @@ export type Database = {
           sold_at?: string
           created_at?: string
         }
+        Relationships: []
       }
       suppliers: {
         Row: {
@@ -260,6 +269,7 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       procurement_expected_items: {
         Row: {
@@ -307,6 +317,7 @@ export type Database = {
           game_type?: 'pokemon' | 'onepiece'
           created_at?: string
         }
+        Relationships: []
       }
       procurement_attachments: {
         Row: {
@@ -339,6 +350,7 @@ export type Database = {
           uploaded_by?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       transactions: {
         Row: {
@@ -392,6 +404,15 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: 'transactions_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
       }
       transaction_items: {
         Row: {
@@ -448,6 +469,7 @@ export type Database = {
           notes?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       price_history: {
         Row: {
@@ -477,6 +499,7 @@ export type Database = {
           source?: string
           created_at?: string
         }
+        Relationships: []
       }
       tcg_cache: {
         Row: {
@@ -506,6 +529,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
         }
+        Relationships: []
       }
     }
     Views: {
@@ -515,6 +539,32 @@ export type Database = {
       get_organization_by_invite_code: {
         Args: { code: string }
         Returns: { id: string; name: string }[]
+      }
+      join_organization_by_invite_code: {
+        Args: { invite_code_input: string }
+        Returns: { org_id: string; org_name: string }[]
+      }
+      get_organization_analytics: {
+        Args: { org_id: string }
+        Returns: {
+          totalInventoryValue: number
+          totalItems: number
+          totalInvested: number
+          itemsSold: number
+          totalRevenue: number
+          totalProfit: number
+          pendingProcurements: number
+          inventoryByStatus: {
+            IN_STOCK: number
+            LISTED: number
+            SOLD: number
+          }
+          recentActivity: {
+            date: string
+            items_added: number
+            value: number
+          }[]
+        }
       }
     }
     Enums: {
@@ -526,33 +576,46 @@ export type Database = {
   }
 }
 
-// Create client AFTER Database type is defined
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// Create client - env vars are validated at runtime when auth/db calls are made
+// The layout.tsx already checks for these before rendering the app
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
 
+// Helper to validate Supabase is configured (call before making requests)
+export function assertSupabaseConfigured(): void {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    throw new Error('Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local')
+  }
+}
+
+// Type-safe table helpers
+export type Tables = Database['public']['Tables']
+export type TableName = keyof Tables
+
 // Type exports
-export type Organization = Database['public']['Tables']['organizations']['Row']
-export type OrganizationInsert = Database['public']['Tables']['organizations']['Insert']
-export type OrganizationMember = Database['public']['Tables']['organization_members']['Row']
-export type OrganizationMemberInsert = Database['public']['Tables']['organization_members']['Insert']
-export type OrganizationInvite = Database['public']['Tables']['organization_invites']['Row']
-export type OrganizationInviteInsert = Database['public']['Tables']['organization_invites']['Insert']
-export type InventoryItem = Database['public']['Tables']['inventory']['Row']
-export type InventoryInsert = Database['public']['Tables']['inventory']['Insert']
-export type Procurement = Database['public']['Tables']['procurements']['Row']
-export type ProcurementInsert = Database['public']['Tables']['procurements']['Insert']
-export type Sale = Database['public']['Tables']['sales']['Row']
-export type SaleInsert = Database['public']['Tables']['sales']['Insert']
-export type Supplier = Database['public']['Tables']['suppliers']['Row']
-export type SupplierInsert = Database['public']['Tables']['suppliers']['Insert']
-export type ProcurementExpectedItem = Database['public']['Tables']['procurement_expected_items']['Row']
-export type ProcurementExpectedItemInsert = Database['public']['Tables']['procurement_expected_items']['Insert']
-export type ProcurementAttachment = Database['public']['Tables']['procurement_attachments']['Row']
-export type ProcurementAttachmentInsert = Database['public']['Tables']['procurement_attachments']['Insert']
-export type Transaction = Database['public']['Tables']['transactions']['Row']
-export type TransactionInsert = Database['public']['Tables']['transactions']['Insert']
-export type TransactionUpdate = Database['public']['Tables']['transactions']['Update']
-export type TransactionItem = Database['public']['Tables']['transaction_items']['Row']
-export type TransactionItemInsert = Database['public']['Tables']['transaction_items']['Insert']
+export type Organization = Tables['organizations']['Row']
+export type OrganizationInsert = Tables['organizations']['Insert']
+export type OrganizationMember = Tables['organization_members']['Row']
+export type OrganizationMemberInsert = Tables['organization_members']['Insert']
+export type OrganizationInvite = Tables['organization_invites']['Row']
+export type OrganizationInviteInsert = Tables['organization_invites']['Insert']
+export type InventoryItem = Tables['inventory']['Row']
+export type InventoryInsert = Tables['inventory']['Insert']
+export type InventoryUpdate = Tables['inventory']['Update']
+export type Procurement = Tables['procurements']['Row']
+export type ProcurementInsert = Tables['procurements']['Insert']
+export type Sale = Tables['sales']['Row']
+export type SaleInsert = Tables['sales']['Insert']
+export type Supplier = Tables['suppliers']['Row']
+export type SupplierInsert = Tables['suppliers']['Insert']
+export type ProcurementExpectedItem = Tables['procurement_expected_items']['Row']
+export type ProcurementExpectedItemInsert = Tables['procurement_expected_items']['Insert']
+export type ProcurementAttachment = Tables['procurement_attachments']['Row']
+export type ProcurementAttachmentInsert = Tables['procurement_attachments']['Insert']
+export type Transaction = Tables['transactions']['Row']
+export type TransactionInsert = Tables['transactions']['Insert']
+export type TransactionUpdate = Tables['transactions']['Update']
+export type TransactionItem = Tables['transaction_items']['Row']
+export type TransactionItemInsert = Tables['transaction_items']['Insert']
