@@ -9,7 +9,9 @@ import {
   LogOut,
   X,
   Building2,
-  Settings
+  Settings,
+  Bell,
+  FileText
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -25,6 +27,8 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Transactions", href: "/transactions", icon: ArrowLeftRight },
+  { name: "Alerts", href: "/alerts", icon: Bell },
+  { name: "Reports", href: "/reports", icon: FileText },
   { name: "Organization", href: "/organization", icon: Building2 },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
@@ -49,7 +53,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 h-screen w-[280px] transition-transform duration-300 md:translate-x-0 p-4",
+          "fixed left-0 top-0 z-40 h-screen w-[280px] transition-transform duration-300 md:hidden p-4",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -73,7 +77,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* Organization Name */}
           {organization && (
             <div className="mx-6 mb-2">
-              <Link 
+              <Link
                 href="/organization"
                 className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
               >
