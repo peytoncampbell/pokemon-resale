@@ -324,7 +324,7 @@ export function PriceAlertFormModal({ open, onClose, preselectedCard }: PriceAle
                 <label className="flex items-center gap-3 cursor-pointer">
                   <Checkbox
                     checked={notifyInApp}
-                    onCheckedChange={(checked) => setNotifyInApp(checked as boolean)}
+                    onChange={(e) => setNotifyInApp(e.target.checked)}
                   />
                   <Bell className="h-4 w-4 text-white/60" />
                   <span className="text-sm text-white/80">In-app notification</span>
@@ -332,7 +332,7 @@ export function PriceAlertFormModal({ open, onClose, preselectedCard }: PriceAle
                 <label className="flex items-center gap-3 cursor-pointer">
                   <Checkbox
                     checked={notifyEmail}
-                    onCheckedChange={(checked) => setNotifyEmail(checked as boolean)}
+                    onChange={(e) => setNotifyEmail(e.target.checked)}
                   />
                   <Mail className="h-4 w-4 text-white/60" />
                   <span className="text-sm text-white/80">Email notification</span>

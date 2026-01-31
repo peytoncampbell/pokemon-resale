@@ -36,7 +36,7 @@ function transformSavedReport(row: SavedReportRow): SavedReport {
     userId: row.user_id,
     name: row.name,
     reportType: row.report_type as SavedReport['reportType'],
-    config: row.config as ReportConfig,
+    config: row.config as unknown as ReportConfig,
     schedule: row.schedule_frequency
       ? {
           frequency: row.schedule_frequency as 'daily' | 'weekly' | 'monthly',
@@ -89,7 +89,7 @@ export function useCreateSavedReport() {
           user_id: userId,
           name: input.name,
           report_type: input.reportType,
-          config: input.config,
+          config: input.config as unknown as Record<string, unknown>,
           schedule_frequency: input.scheduleFrequency || null,
           schedule_day_of_week: input.scheduleDayOfWeek || null,
           schedule_day_of_month: input.scheduleDayOfMonth || null,

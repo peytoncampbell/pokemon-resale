@@ -210,7 +210,7 @@ export function PriceHistoryChart({
                   color: '#fff',
                 }}
                 labelStyle={{ color: 'rgba(255,255,255,0.6)' }}
-                formatter={(value: number) => [formatPrice(value), 'Price']}
+                formatter={(value) => [formatPrice(value as number), 'Price']}
               />
               {/* User buy price reference line */}
               {userBuyPrice && (
@@ -307,7 +307,9 @@ function PriceHistoryChartSkeleton({ className, height = 250 }: { className?: st
             <Skeleton className="h-4 w-16" />
           </div>
         </div>
-        <Skeleton className="w-full rounded-lg" style={{ height }} />
+        <div style={{ height }}>
+          <Skeleton className="w-full h-full rounded-lg" />
+        </div>
       </CardContent>
     </Card>
   )
