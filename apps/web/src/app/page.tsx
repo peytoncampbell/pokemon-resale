@@ -7,6 +7,12 @@ import { InventoryStatusCard } from '@/components/dashboard/inventory-status-car
 import { SalesChartWrapper } from '@/components/dashboard/sales-chart-wrapper'
 import { RecentActivityCard } from '@/components/dashboard/recent-activity-card'
 import { RecentInventoryCard } from '@/components/dashboard/recent-inventory-card'
+import {
+  ProfitBySetWidget,
+  ProfitByPlatformWidget,
+  InventoryAgingWidget,
+  SellThroughWidget,
+} from '@/components/analytics'
 
 export default function DashboardPage() {
   return (
@@ -29,6 +35,17 @@ export default function DashboardPage() {
           <div>
             <InventoryStatusCard />
           </div>
+        </div>
+
+        {/* Analytics Section */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <ProfitBySetWidget />
+          <ProfitByPlatformWidget />
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <InventoryAgingWidget />
+          <SellThroughWidget />
         </div>
 
         {/* Recent Activity */}

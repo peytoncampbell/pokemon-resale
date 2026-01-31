@@ -581,6 +581,165 @@ export type Database = {
           }
         ]
       }
+      price_alerts: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string
+          card_id: string
+          card_name: string
+          card_image: string | null
+          set_name: string | null
+          condition: 'NM' | 'LP' | 'MP' | 'HP' | 'DMG'
+          game_type: 'pokemon' | 'onepiece'
+          alert_type: 'above' | 'below' | 'change_percent'
+          target_price: number | null
+          threshold_percent: number | null
+          is_active: boolean
+          is_triggered: boolean
+          triggered_at: string | null
+          triggered_price: number | null
+          notify_in_app: boolean
+          notify_email: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id: string
+          card_id: string
+          card_name: string
+          card_image?: string | null
+          set_name?: string | null
+          condition?: 'NM' | 'LP' | 'MP' | 'HP' | 'DMG'
+          game_type?: 'pokemon' | 'onepiece'
+          alert_type: 'above' | 'below' | 'change_percent'
+          target_price?: number | null
+          threshold_percent?: number | null
+          is_active?: boolean
+          is_triggered?: boolean
+          triggered_at?: string | null
+          triggered_price?: number | null
+          notify_in_app?: boolean
+          notify_email?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string
+          card_id?: string
+          card_name?: string
+          card_image?: string | null
+          set_name?: string | null
+          condition?: 'NM' | 'LP' | 'MP' | 'HP' | 'DMG'
+          game_type?: 'pokemon' | 'onepiece'
+          alert_type?: 'above' | 'below' | 'change_percent'
+          target_price?: number | null
+          threshold_percent?: number | null
+          is_active?: boolean
+          is_triggered?: boolean
+          triggered_at?: string | null
+          triggered_price?: number | null
+          notify_in_app?: boolean
+          notify_email?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          organization_id: string
+          type: 'price_alert' | 'system' | 'report' | 'inventory'
+          title: string
+          message: string
+          link: string | null
+          is_read: boolean
+          read_at: string | null
+          metadata: Record<string, unknown>
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          organization_id: string
+          type: 'price_alert' | 'system' | 'report' | 'inventory'
+          title: string
+          message: string
+          link?: string | null
+          is_read?: boolean
+          read_at?: string | null
+          metadata?: Record<string, unknown>
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          organization_id?: string
+          type?: 'price_alert' | 'system' | 'report' | 'inventory'
+          title?: string
+          message?: string
+          link?: string | null
+          is_read?: boolean
+          read_at?: string | null
+          metadata?: Record<string, unknown>
+          created_at?: string
+        }
+        Relationships: []
+      }
+      saved_reports: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string
+          name: string
+          report_type: 'profit_loss' | 'inventory_valuation' | 'sales_by_platform' | 'sales_by_set' | 'inventory_aging' | 'tax_summary' | 'custom'
+          config: Record<string, unknown>
+          schedule_frequency: 'daily' | 'weekly' | 'monthly' | null
+          schedule_day_of_week: number | null
+          schedule_day_of_month: number | null
+          schedule_email: string | null
+          last_run_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id: string
+          name: string
+          report_type: 'profit_loss' | 'inventory_valuation' | 'sales_by_platform' | 'sales_by_set' | 'inventory_aging' | 'tax_summary' | 'custom'
+          config?: Record<string, unknown>
+          schedule_frequency?: 'daily' | 'weekly' | 'monthly' | null
+          schedule_day_of_week?: number | null
+          schedule_day_of_month?: number | null
+          schedule_email?: string | null
+          last_run_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string
+          name?: string
+          report_type?: 'profit_loss' | 'inventory_valuation' | 'sales_by_platform' | 'sales_by_set' | 'inventory_aging' | 'tax_summary' | 'custom'
+          config?: Record<string, unknown>
+          schedule_frequency?: 'daily' | 'weekly' | 'monthly' | null
+          schedule_day_of_week?: number | null
+          schedule_day_of_month?: number | null
+          schedule_email?: string | null
+          last_run_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
