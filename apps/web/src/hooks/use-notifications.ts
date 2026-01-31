@@ -5,7 +5,7 @@ import { getCurrentOrganizationId } from './use-organization'
 import { getCurrentUserId } from '@/lib/auth-helpers'
 import type { Notification, CreateNotificationInput } from '@/types/price-intelligence'
 
-// Database row type
+// Database row type (table not yet in generated types)
 interface NotificationRow {
   id: string
   user_id: string
@@ -19,6 +19,10 @@ interface NotificationRow {
   metadata: Record<string, unknown>
   created_at: string
 }
+
+// Type assertion helper for notifications table (until types are regenerated)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const notificationsTable = () => (supabase as any).from('notifications' as never)
 
 // Transform database row to frontend type
 function transformNotification(row: NotificationRow): Notification {
@@ -47,7 +51,7 @@ export function useNotifications(limit: number = 50) {
       if (!userId) return []
 
       const { data, error } = await supabase
-        .from('notifications')
+        .from('notifications' as never)
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
@@ -101,7 +105,7 @@ export function useUnreadNotificationCount() {
       if (!userId) return 0
 
       const { count, error } = await supabase
-        .from('notifications')
+        .from('notifications' as never)
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
         .eq('is_read', false)
@@ -123,7 +127,7 @@ export function useMarkNotificationRead() {
       if (!userId) throw new Error('Not authenticated')
 
       const { error } = await supabase
-        .from('notifications')
+        .from('notifications' as never)
         .update({
           is_read: true,
           read_at: new Date().toISOString(),
@@ -148,7 +152,7 @@ export function useMarkAllNotificationsRead() {
       if (!userId) throw new Error('Not authenticated')
 
       const { error } = await supabase
-        .from('notifications')
+        .from('notifications' as never)
         .update({
           is_read: true,
           read_at: new Date().toISOString(),
@@ -173,7 +177,7 @@ export function useDeleteNotification() {
       if (!userId) throw new Error('Not authenticated')
 
       const { error } = await supabase
-        .from('notifications')
+        .from('notifications' as never)
         .delete()
         .eq('id', id)
         .eq('user_id', userId)
@@ -195,7 +199,7 @@ export function useClearAllNotifications() {
       if (!userId) throw new Error('Not authenticated')
 
       const { error } = await supabase
-        .from('notifications')
+        .from('notifications' as never)
         .delete()
         .eq('user_id', userId)
 
@@ -218,7 +222,7 @@ export function useCreateNotification() {
       if (!userId || !orgId) throw new Error('Not authenticated')
 
       const { data, error } = await supabase
-        .from('notifications')
+        .from('notifications' as never)
         .insert({
           user_id: userId,
           organization_id: orgId,
