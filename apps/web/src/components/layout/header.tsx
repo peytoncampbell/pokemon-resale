@@ -1,17 +1,13 @@
 "use client"
 
-import { Menu, Search, Settings } from "lucide-react"
+import { Search, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuthContext } from "@/components/providers/auth-provider"
 import { useCurrency } from "@/hooks/use-currency"
 import { NotificationBell } from "@/components/notifications"
 import Link from "next/link"
 
-interface HeaderProps {
-  onMenuClick: () => void
-}
-
-export function Header({ onMenuClick }: HeaderProps) {
+export function Header() {
   const { user } = useAuthContext()
   const { currency, toggleCurrency } = useCurrency()
 

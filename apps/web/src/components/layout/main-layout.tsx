@@ -13,14 +13,18 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     <AuthGuard>
       <div className="min-h-screen bg-[url('/bg-dark-grain.png')] bg-cover bg-fixed">
         {/* Desktop: Grid layout with dock and content side by side */}
-        <div className="hidden md:grid md:grid-cols-[auto_1fr] md:gap-4 md:p-4 min-h-screen">
+        <div className="hidden md:grid md:grid-cols-[auto_1fr] md:gap-6 md:p-4 min-h-screen">
           {/* Dock - flows in grid, not fixed */}
           <CommandDock onMobileMenuToggle={() => setMobileMenuOpen(true)} />
 
           {/* Main content fills remaining space */}
           <div className="flex flex-col min-h-0">
-            <Header onMenuClick={() => {}} />
-            <main className="flex-1 px-4 max-w-[1920px]">
+            {/* Header row with right-aligned controls */}
+            <div className="flex justify-end">
+              <Header />
+            </div>
+            {/* Main content */}
+            <main className="flex-1 max-w-[1920px]">
               {children}
             </main>
           </div>

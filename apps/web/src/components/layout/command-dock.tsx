@@ -17,7 +17,6 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuthContext } from "@/components/providers/auth-provider";
-import { useOrganization } from "@/hooks/use-organization";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface CommandDockProps {
@@ -38,7 +37,6 @@ export function CommandDock({ onMobileMenuToggle }: CommandDockProps) {
     const pathname = usePathname();
     const [isHovered, setIsHovered] = useState(false);
     const { signOut } = useAuthContext();
-    const { data: organization } = useOrganization();
 
     return (
         <>
@@ -61,7 +59,7 @@ export function CommandDock({ onMobileMenuToggle }: CommandDockProps) {
                 animate={{ width: isHovered ? 240 : 80 }}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className="hidden md:flex flex-col glass-card-gradient overflow-hidden transition-all duration-300 rounded-3xl h-[calc(100vh-2rem)] sticky top-4"
+                className="hidden md:flex flex-col glass-card-gradient overflow-hidden transition-all duration-300 rounded-3xl h-[calc(100vh-2.5rem)] sticky top-4"
             >
                 {/* Logo Area */}
                 <div className="h-20 flex items-center px-5 gap-4 flex-shrink-0">
