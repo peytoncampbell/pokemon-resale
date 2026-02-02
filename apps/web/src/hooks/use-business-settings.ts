@@ -69,42 +69,25 @@ export function useUpdateBusinessSettings() {
       const orgId = await getCurrentOrganizationId()
       if (!orgId) throw new Error('No organization')
 
-      // Check if settings exist
-      const { data: existing } = await supabase
+      // Use upsert pattern - 1 query instead of 2 (check + insert/update)
+      const { data, error } = await supabase
         .from('business_settings')
-        .select('id')
-        .eq('organization_id', orgId)
-        .maybeSingle()
-
-      if (existing) {
-        // Update existing settings
-        const { data, error } = await supabase
-          .from('business_settings')
-          .update({
-            ...settings,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('organization_id', orgId)
-          .select()
-          .single()
-
-        if (error) throw error
-        return data
-      } else {
-        // Create new settings
-        const { data, error } = await supabase
-          .from('business_settings')
-          .insert({
+        .upsert(
+          {
             organization_id: orgId,
             ...DEFAULT_SETTINGS,
             ...settings,
-          })
-          .select()
-          .single()
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'organization_id',
+          }
+        )
+        .select()
+        .single()
 
-        if (error) throw error
-        return data
-      }
+      if (error) throw error
+      return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['business-settings'] })

@@ -213,73 +213,91 @@ export function useCreateTransaction() {
 
       if (txError) throw txError
 
-      // 2. Process items
-      for (const item of data.items) {
-        let inventoryId = item.inventory_id
+      // 2. Process items using batch operations (optimized from N+1 pattern)
+      const inItems = data.items.filter((i) => i.direction === 'IN')
+      const outItems = data.items.filter((i) => i.direction === 'OUT')
 
-        // For IN items, create new inventory entries
-        if (item.direction === 'IN') {
-          const inventoryInsert: InventoryInsert = {
-            user_id: userId,
-            organization_id: orgId,
-            card_id: item.card_id,
-            card_name: item.card_name,
-            card_image: item.card_image || null,
-            set_name: item.set_name || null,
-            location: item.location || 'BIN-01',
-            condition: item.condition || 'NM',
-            acquisition_cost: item.unit_value || 0,
-            quantity: item.quantity || 1,
-            status: 'IN_STOCK',
-            notes: item.notes || null,
-            game_type: item.game_type || 'pokemon',
-          }
+      // Map to track new inventory IDs for IN items
+      const inventoryIdMap = new Map<number, string>()
 
-          const { data: newInventory, error: invError } = await supabase
-            .from('inventory')
-            .insert(inventoryInsert)
-            .select()
-            .single()
-
-          if (invError) throw invError
-
-          inventoryId = newInventory.id
-        }
-
-        // For OUT items, mark inventory as SOLD
-        if (item.direction === 'OUT' && item.inventory_id) {
-          const { error: updateError } = await supabase
-            .from('inventory')
-            .update({ status: 'SOLD' })
-            .eq('id', item.inventory_id)
-
-          if (updateError) throw updateError
-        }
-
-        // Create transaction item
-        const itemInsert: TransactionItemInsert = {
-          transaction_id: transaction.id,
-          direction: item.direction,
+      // Batch insert all IN items into inventory (1 query instead of N)
+      if (inItems.length > 0) {
+        const inventoryInserts: InventoryInsert[] = inItems.map((item) => ({
+          user_id: userId,
+          organization_id: orgId,
           card_id: item.card_id,
           card_name: item.card_name,
-          card_image: item.card_image,
-          set_name: item.set_name,
-          game_type: item.game_type || 'pokemon',
-          condition: item.condition || 'NM',
-          inventory_id: inventoryId,
-          quantity: item.quantity || 1,
-          unit_value: item.unit_value || 0,
-          total_value: (item.unit_value || 0) * (item.quantity || 1),
+          card_image: item.card_image || null,
+          set_name: item.set_name || null,
           location: item.location || 'BIN-01',
-          notes: item.notes,
-        }
+          condition: item.condition || 'NM',
+          acquisition_cost: item.unit_value || 0,
+          quantity: item.quantity || 1,
+          status: 'IN_STOCK',
+          notes: item.notes || null,
+          game_type: item.game_type || 'pokemon',
+        }))
 
-        const { error: itemError } = await supabase
-          .from('transaction_items')
-          .insert(itemInsert)
+        const { data: newInventory, error: invError } = await supabase
+          .from('inventory')
+          .insert(inventoryInserts)
+          .select('id')
 
-        if (itemError) throw itemError
+        if (invError) throw invError
+
+        // Map new inventory IDs back to items by index
+        newInventory?.forEach((inv, index) => {
+          inventoryIdMap.set(index, inv.id)
+        })
       }
+
+      // Batch update all OUT items to SOLD (1 query instead of N)
+      const outInventoryIds = outItems
+        .map((i) => i.inventory_id)
+        .filter((id): id is string => !!id)
+
+      if (outInventoryIds.length > 0) {
+        const { error: updateError } = await supabase
+          .from('inventory')
+          .update({ status: 'SOLD' })
+          .in('id', outInventoryIds)
+
+        if (updateError) throw updateError
+      }
+
+      // Batch insert all transaction items (1 query instead of N)
+      let inItemIndex = 0
+      const transactionItemInserts: TransactionItemInsert[] = data.items.map(
+        (item) => {
+          let inventoryId = item.inventory_id
+          if (item.direction === 'IN') {
+            inventoryId = inventoryIdMap.get(inItemIndex++) || null
+          }
+
+          return {
+            transaction_id: transaction.id,
+            direction: item.direction,
+            card_id: item.card_id,
+            card_name: item.card_name,
+            card_image: item.card_image,
+            set_name: item.set_name,
+            game_type: item.game_type || 'pokemon',
+            condition: item.condition || 'NM',
+            inventory_id: inventoryId,
+            quantity: item.quantity || 1,
+            unit_value: item.unit_value || 0,
+            total_value: (item.unit_value || 0) * (item.quantity || 1),
+            location: item.location || 'BIN-01',
+            notes: item.notes,
+          }
+        }
+      )
+
+      const { error: itemError } = await supabase
+        .from('transaction_items')
+        .insert(transactionItemInserts)
+
+      if (itemError) throw itemError
 
       return transaction
     },
@@ -341,23 +359,33 @@ export function useDeleteTransaction() {
       const typedTransaction = transaction as unknown as TransactionWithItems
       const items = typedTransaction.transaction_items
 
-      // 2. Revert inventory changes
-      for (const item of items) {
-        if (item.direction === 'OUT' && item.inventory_id) {
-          // Revert OUT items back to IN_STOCK
-          await supabase
-            .from('inventory')
-            .update({ status: 'IN_STOCK' })
-            .eq('id', item.inventory_id)
-        }
+      // 2. Revert inventory changes using batch operations (optimized from N+1 pattern)
+      const outItemIds = items
+        .filter((i) => i.direction === 'OUT' && i.inventory_id)
+        .map((i) => i.inventory_id as string)
 
-        if (item.direction === 'IN' && item.inventory_id) {
-          // Delete inventory items that were created by this transaction
-          await supabase
-            .from('inventory')
-            .delete()
-            .eq('id', item.inventory_id)
-        }
+      const inItemIds = items
+        .filter((i) => i.direction === 'IN' && i.inventory_id)
+        .map((i) => i.inventory_id as string)
+
+      // Batch revert OUT items back to IN_STOCK (1 query instead of N)
+      if (outItemIds.length > 0) {
+        const { error: revertError } = await supabase
+          .from('inventory')
+          .update({ status: 'IN_STOCK' })
+          .in('id', outItemIds)
+
+        if (revertError) throw revertError
+      }
+
+      // Batch delete IN items that were created by this transaction (1 query instead of N)
+      if (inItemIds.length > 0) {
+        const { error: deleteInvError } = await supabase
+          .from('inventory')
+          .delete()
+          .in('id', inItemIds)
+
+        if (deleteInvError) throw deleteInvError
       }
 
       // 3. Delete transaction (cascade deletes transaction_items)

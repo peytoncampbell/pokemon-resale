@@ -1,3 +1,4 @@
+import { memo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -22,13 +23,13 @@ const iconColorClasses = {
   cyan: 'icon-bg-cyan shadow-vision-cyan/30',
 }
 
-export function MetricCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  trend, 
+export const MetricCard = memo(function MetricCard({
+  title,
+  value,
+  icon: Icon,
+  trend,
   iconColor = 'blue',
-  className 
+  className,
 }: MetricCardProps) {
   return (
     <Card className={cn("hover:shadow-lg hover:shadow-vision-blue/5 transition-all", className)}>
@@ -58,4 +59,4 @@ export function MetricCard({
       </CardContent>
     </Card>
   )
-}
+})

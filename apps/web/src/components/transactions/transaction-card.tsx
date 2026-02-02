@@ -17,7 +17,7 @@ import {
   Package,
 } from 'lucide-react'
 import type { TransactionWithItems } from '@/hooks/use-transactions'
-import { useState } from 'react'
+import { useState, memo, useMemo } from 'react'
 import Image from 'next/image'
 
 interface TransactionCardProps {
@@ -57,18 +57,26 @@ const COUNTERPARTY_ICONS = {
   OTHER: Package,
 }
 
-export function TransactionCard({ transaction, onDelete, isDeleting }: TransactionCardProps) {
+export const TransactionCard = memo(function TransactionCard({
+  transaction,
+  onDelete,
+  isDeleting,
+}: TransactionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const { formatConverted } = useCurrency()
   const config = TYPE_CONFIG[transaction.type]
   const TypeIcon = config.icon
   const CounterpartyIcon = COUNTERPARTY_ICONS[transaction.counterparty_type || 'OTHER']
 
-  const inItems = transaction.transaction_items.filter((i) => i.direction === 'IN')
-  const outItems = transaction.transaction_items.filter((i) => i.direction === 'OUT')
-  const totalItems = transaction.transaction_items.reduce((sum, i) => sum + i.quantity, 0)
-
-  const netCash = Number(transaction.cash_in) - Number(transaction.cash_out) - Number(transaction.fees)
+  // Memoize filtered items to avoid recalculating on every render
+  const { inItems, outItems, totalItems, netCash } = useMemo(() => {
+    const inItems = transaction.transaction_items.filter((i) => i.direction === 'IN')
+    const outItems = transaction.transaction_items.filter((i) => i.direction === 'OUT')
+    const totalItems = transaction.transaction_items.reduce((sum, i) => sum + i.quantity, 0)
+    const netCash =
+      Number(transaction.cash_in) - Number(transaction.cash_out) - Number(transaction.fees)
+    return { inItems, outItems, totalItems, netCash }
+  }, [transaction])
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('en-US', {
@@ -289,4 +297,4 @@ export function TransactionCard({ transaction, onDelete, isDeleting }: Transacti
       </CardContent>
     </Card>
   )
-}
+})

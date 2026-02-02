@@ -95,29 +95,32 @@ async function fetchAnalyticsFromDatabase(orgId: string): Promise<AnalyticsSumma
  * Fallback: Calculate analytics client-side (used when DB function unavailable)
  */
 async function fetchAnalyticsClientSide(orgId: string): Promise<AnalyticsSummary> {
-  // Get all inventory items
+  // Get inventory items - only fields needed for calculations
   const { data: inventoryData, error: invError } = await supabase
     .from('inventory')
-    .select('*')
+    .select('status, condition, acquisition_cost, quantity, created_at')
     .eq('organization_id', orgId)
 
   if (invError) throw invError
-  const inventory = inventoryData as InventoryItem[] | null
+  const inventory = inventoryData as Pick<
+    InventoryItem,
+    'status' | 'condition' | 'acquisition_cost' | 'quantity' | 'created_at'
+  >[] | null
 
-  // Get all completed transactions
+  // Get completed transactions - only fields needed for calculations
   const { data: transactionsData, error: txError } = await supabase
     .from('transactions')
-    .select('*')
+    .select('type, cash_in, fees')
     .eq('organization_id', orgId)
     .eq('status', 'COMPLETED')
 
   if (txError) throw txError
-  const transactions = transactionsData as Transaction[] | null
+  const transactions = transactionsData as Pick<Transaction, 'type' | 'cash_in' | 'fees'>[] | null
 
-  // Get pending procurements count
+  // Get pending procurements count - use head:true to only get count
   const { count: pendingProcurements, error: procError } = await supabase
     .from('procurements')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .eq('organization_id', orgId)
     .eq('status', 'PENDING')
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { useBulkUpdateInventory, useBulkDeleteInventory } from '@/hooks/use-bulk-operations'
 import { Trash2, MapPin, Tag, X, CheckCircle } from 'lucide-react'
@@ -28,24 +28,32 @@ export function BulkActionBar({ selectedIds, onClearSelection }: BulkActionBarPr
   const bulkUpdate = useBulkUpdateInventory()
   const bulkDelete = useBulkDeleteInventory()
 
-  const handleStatusChange = async (status: 'IN_STOCK' | 'LISTED' | 'SOLD') => {
-    await bulkUpdate.mutateAsync({ ids: selectedIds, status })
-    setShowStatusDropdown(false)
-    onClearSelection()
-  }
+  const handleStatusChange = useCallback(
+    async (status: 'IN_STOCK' | 'LISTED' | 'SOLD') => {
+      await bulkUpdate.mutateAsync({ ids: selectedIds, status })
+      setShowStatusDropdown(false)
+      onClearSelection()
+    },
+    [bulkUpdate, selectedIds, onClearSelection]
+  )
 
-  const handleLocationChange = async (location: string) => {
-    await bulkUpdate.mutateAsync({ ids: selectedIds, location })
-    setShowLocationDropdown(false)
-    onClearSelection()
-  }
+  const handleLocationChange = useCallback(
+    async (location: string) => {
+      await bulkUpdate.mutateAsync({ ids: selectedIds, location })
+      setShowLocationDropdown(false)
+      onClearSelection()
+    },
+    [bulkUpdate, selectedIds, onClearSelection]
+  )
 
-  const handleDelete = async () => {
-    if (confirm(`Are you sure you want to delete ${selectedIds.length} items? This cannot be undone.`)) {
+  const handleDelete = useCallback(async () => {
+    if (
+      confirm(`Are you sure you want to delete ${selectedIds.length} items? This cannot be undone.`)
+    ) {
       await bulkDelete.mutateAsync(selectedIds)
       onClearSelection()
     }
-  }
+  }, [bulkDelete, selectedIds, onClearSelection])
 
   if (selectedIds.length === 0) return null
 

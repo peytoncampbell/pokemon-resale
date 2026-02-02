@@ -1,9 +1,18 @@
 'use client'
 
-import { SalesChart } from './sales-chart'
+import dynamic from 'next/dynamic'
 import { SkeletonChart } from '@/components/ui/skeleton'
 import { useAnalytics } from '@/hooks/use-analytics'
 import { useMemo } from 'react'
+
+// Dynamic import to code-split recharts (7.8MB) from initial bundle
+const SalesChart = dynamic(
+  () => import('./sales-chart').then((m) => m.SalesChart),
+  {
+    loading: () => <SkeletonChart />,
+    ssr: false,
+  }
+)
 
 export function SalesChartWrapper() {
   const { data: analytics, isLoading } = useAnalytics()

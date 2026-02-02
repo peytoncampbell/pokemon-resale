@@ -65,9 +65,10 @@ export function useCheckDuplicates() {
       const orgId = await getCurrentOrganizationId()
       if (!orgId) return []
 
+      // Select only fields needed for duplicate display
       const { data, error } = await supabase
         .from('inventory')
-        .select('*')
+        .select('id, card_id, card_name, quantity, condition, status, location')
         .eq('card_id', cardId)
         .eq('organization_id', orgId)
 

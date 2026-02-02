@@ -40,9 +40,55 @@ interface OptimisticContext {
   previousItem?: InventoryItem
 }
 
-export function useInventoryItems(statusFilter?: 'IN_STOCK' | 'LISTED' | 'SOLD') {
+const INVENTORY_PAGE_SIZE = 50
+
+export interface PaginatedInventoryResult {
+  items: InventoryItem[]
+  totalCount: number
+  hasMore: boolean
+  page: number
+}
+
+export function useInventoryItems(
+  statusFilter?: 'IN_STOCK' | 'LISTED' | 'SOLD',
+  page = 0
+) {
   return useQuery({
-    queryKey: ['inventory', 'items', statusFilter],
+    queryKey: ['inventory', 'items', statusFilter, page],
+    queryFn: async (): Promise<PaginatedInventoryResult> => {
+      const orgId = await getCurrentOrganizationId()
+      if (!orgId)
+        return { items: [], totalCount: 0, hasMore: false, page }
+
+      let query = supabase
+        .from('inventory')
+        .select('*', { count: 'exact' })
+        .eq('organization_id', orgId)
+        .order('created_at', { ascending: false })
+        .range(page * INVENTORY_PAGE_SIZE, (page + 1) * INVENTORY_PAGE_SIZE - 1)
+
+      if (statusFilter) {
+        query = query.eq('status', statusFilter)
+      }
+
+      const { data, error, count } = await query
+
+      if (error) throw error
+
+      return {
+        items: data as InventoryItem[],
+        totalCount: count ?? 0,
+        hasMore: (count ?? 0) > (page + 1) * INVENTORY_PAGE_SIZE,
+        page,
+      }
+    },
+  })
+}
+
+// Keep a non-paginated version for backward compatibility (e.g., analytics)
+export function useAllInventoryItems(statusFilter?: 'IN_STOCK' | 'LISTED' | 'SOLD') {
+  return useQuery({
+    queryKey: ['inventory', 'all-items', statusFilter],
     queryFn: async () => {
       const orgId = await getCurrentOrganizationId()
       if (!orgId) return []

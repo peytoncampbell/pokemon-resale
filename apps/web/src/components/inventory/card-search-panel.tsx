@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Search, CreditCard, Package } from 'lucide-react'
@@ -68,35 +68,38 @@ export function CardSearchPanel({ onCardSelect }: CardSearchPanelProps) {
         ? isSearchingSealed
         : isLoadingRecentSealed
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && searchQuery.length > 0) {
-      e.preventDefault()
-      setSearchEnabled(true)
-    }
-  }
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && searchQuery.length > 0) {
+        e.preventDefault()
+        setSearchEnabled(true)
+      }
+    },
+    [searchQuery.length]
+  )
 
-  const handleSearchChange = (value: string) => {
+  const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value)
     setSearchEnabled(false)
-  }
+  }, [])
 
-  const handleSearchClick = () => {
+  const handleSearchClick = useCallback(() => {
     if (searchQuery.length > 0) {
       setSearchEnabled(true)
     }
-  }
+  }, [searchQuery.length])
 
-  const handleGameTypeChange = (newGameType: GameType) => {
+  const handleGameTypeChange = useCallback((newGameType: GameType) => {
     setGameType(newGameType)
     setSearchQuery('')
     setSearchEnabled(false)
-  }
+  }, [])
 
-  const handleProductTabChange = (newTab: ProductTab) => {
+  const handleProductTabChange = useCallback((newTab: ProductTab) => {
     setProductTab(newTab)
     setSearchQuery('')
     setSearchEnabled(false)
-  }
+  }, [])
 
   return (
     <div className="p-6 space-y-6">

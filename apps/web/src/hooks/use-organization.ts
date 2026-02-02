@@ -58,15 +58,16 @@ export function useOrganizationMembers() {
     queryFn: async () => {
       const orgId = await getCurrentOrganizationId()
       if (!orgId) return []
-      
+
+      // Select only needed fields for member list display
       const { data, error } = await supabase
         .from('organization_members')
-        .select('*')
+        .select('id, organization_id, user_id, joined_at')
         .eq('organization_id', orgId)
         .order('joined_at', { ascending: true })
-      
+
       if (error) throw error
-      
+
       return data as OrganizationMember[]
     },
   })
@@ -79,16 +80,17 @@ export function useOrganizationInvites() {
     queryFn: async () => {
       const orgId = await getCurrentOrganizationId()
       if (!orgId) return []
-      
+
+      // Select only needed fields for invite list display
       const { data, error } = await supabase
         .from('organization_invites')
-        .select('*')
+        .select('id, organization_id, email, status, created_at')
         .eq('organization_id', orgId)
         .eq('status', 'PENDING')
         .order('created_at', { ascending: false })
-      
+
       if (error) throw error
-      
+
       return data as OrganizationInvite[]
     },
   })
@@ -246,18 +248,18 @@ export function useCreateInvite() {
 // Hook to accept an invite (called when user with pending invite logs in)
 export function useAcceptInvite() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async (inviteId: string) => {
       const userId = await getCurrentUserId()
-      
-      // Get the invite
+
+      // Get only fields needed for accepting the invite
       const { data: invite, error: inviteError } = await supabase
         .from('organization_invites')
-        .select('*')
+        .select('id, organization_id')
         .eq('id', inviteId)
         .single()
-      
+
       if (inviteError || !invite) throw new Error('Invite not found')
       
       // Add as member
