@@ -65,7 +65,8 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
   const [outItems, setOutItems] = useState<SelectedOutItem[]>([])
   const [inItems, setInItems] = useState<SelectedInItem[]>([])
 
-  const { data: inventoryItems, isLoading: isLoadingInventory } = useInventoryItems('IN_STOCK')
+  const { data: paginatedData, isLoading: isLoadingInventory } = useInventoryItems('IN_STOCK')
+  const inventoryItems = paginatedData?.items
   const { data: recentCards, isLoading: isLoadingRecent } = useRecentCards(gameType)
   const { data: searchResults, isLoading: isSearching } = useSearchCards(searchQuery, gameType)
   const createTransaction = useCreateTransaction()

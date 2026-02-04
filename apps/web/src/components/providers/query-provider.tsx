@@ -12,6 +12,11 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
           queries: {
             staleTime: 60 * 1000,
             refetchOnWindowFocus: false,
+            retry: 3,
+            retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
+          },
+          mutations: {
+            retry: 0,
           },
         },
         mutationCache: new MutationCache({

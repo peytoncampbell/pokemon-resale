@@ -39,7 +39,8 @@ export default function InventoryPage() {
   const { filters, setFilter, clearFilters, activeFilterCount, hasActiveFilters } = useInventoryFilters()
 
   // Fetch all items (we filter client-side for now)
-  const { data: items, isLoading, error } = useInventoryItems()
+  const { data: paginatedData, isLoading, error } = useInventoryItems()
+  const items = paginatedData?.items
   const deleteItem = useDeleteInventoryItem()
   const { exportInventory, isExporting } = useExportInventory()
   const { formatConverted } = useCurrency()

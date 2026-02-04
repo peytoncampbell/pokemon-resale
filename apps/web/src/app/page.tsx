@@ -14,11 +14,15 @@ import {
   SellThroughWidget,
 } from '@/components/analytics'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { GettingStartedChecklist } from '@/components/onboarding/getting-started-checklist'
 
 export default function DashboardPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
+        {/* Getting Started Checklist */}
+        <GettingStartedChecklist />
+
         {/* Page Header */}
         <PageHeader
           title="Dashboard"

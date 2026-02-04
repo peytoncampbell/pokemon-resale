@@ -58,7 +58,7 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
       const existingItems = await checkDuplicates.mutateAsync(selectedCard.id)
 
       if (existingItems.length > 0) {
-        setDuplicates(existingItems)
+        setDuplicates(existingItems as unknown as InventoryItem[])
         setPendingSubmitData(data)
         setShowDuplicateWarning(true)
         return

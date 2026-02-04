@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { PasswordStrengthIndicator } from '@/components/ui/password-strength-indicator'
 
 type ViewMode = 'signin' | 'signup' | 'forgot'
 
@@ -16,6 +17,7 @@ export default function LoginPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('signin')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [agreeToTerms, setAgreeToTerms] = useState(false)
   const { signIn, signUp, resetPassword, signInWithGoogle } = useAuthContext()
   const router = useRouter()
 
@@ -116,11 +118,38 @@ export default function LoginPage() {
                   minLength={6}
                   disabled={loading}
                 />
+                {viewMode === 'signup' && <PasswordStrengthIndicator password={password} />}
+              </div>
+            )}
+            {viewMode === 'signup' && (
+              <div className="flex items-start gap-2">
+                <input
+                  id="agree-terms"
+                  type="checkbox"
+                  checked={agreeToTerms}
+                  onChange={(e) => setAgreeToTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-white/20 bg-white/5 text-vision-blue focus:ring-vision-blue"
+                  disabled={loading}
+                />
+                <Label htmlFor="agree-terms" className="text-sm text-white/60 leading-tight">
+                  I agree to the{' '}
+                  <a href="/terms" className="text-vision-blue hover:underline" target="_blank" rel="noopener noreferrer">
+                    Terms of Service
+                  </a>{' '}
+                  and{' '}
+                  <a href="/privacy" className="text-vision-blue hover:underline" target="_blank" rel="noopener noreferrer">
+                    Privacy Policy
+                  </a>
+                </Label>
               </div>
             )}
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading || (viewMode === 'signup' && !agreeToTerms)}
+            >
               {loading
                 ? 'Loading...'
                 : viewMode === 'forgot'

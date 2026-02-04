@@ -58,7 +58,8 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
   const [selectedPlatform, setSelectedPlatform] = useState<string>('eBay')
   const [feeManualOverride, setFeeManualOverride] = useState(false)
 
-  const { data: inventoryItems, isLoading } = useInventoryItems('IN_STOCK')
+  const { data: paginatedData, isLoading } = useInventoryItems('IN_STOCK')
+  const inventoryItems = paginatedData?.items
   const createTransaction = useCreateTransaction()
   const { currency } = useCurrency()
 

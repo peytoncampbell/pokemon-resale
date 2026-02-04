@@ -23,7 +23,7 @@ export function middleware(_request: NextRequest) {
 
   const cspDirectives = [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-eval' 'unsafe-inline'`,
+    `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://plausible.io`,
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: blob: https://images.pokemontcg.io https://tcgplayer-cdn.tcgplayer.com https://storage.googleapis.com${supabaseDomain ? ` https://${supabaseDomain}` : ''}`,
     `font-src 'self'`,

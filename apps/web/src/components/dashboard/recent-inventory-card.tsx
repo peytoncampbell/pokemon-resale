@@ -11,10 +11,10 @@ import Link from 'next/link'
 import { useMemo } from 'react'
 
 export function RecentInventoryCard() {
-  const { data: inventory, isLoading } = useInventoryItems()
+  const { data: paginatedData, isLoading } = useInventoryItems()
   const { formatConverted } = useCurrency()
 
-  const recentInventory = useMemo(() => inventory?.slice(0, 5) || [], [inventory])
+  const recentInventory = useMemo(() => paginatedData?.items?.slice(0, 5) || [], [paginatedData])
 
   if (isLoading) {
     return <SkeletonList rows={5} />

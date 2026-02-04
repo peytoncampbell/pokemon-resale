@@ -40,10 +40,37 @@ function setMemoryCache(key: string, data: unknown, ttlMs: number): void {
   memoryCache.set(key, { data, expiresAt: Date.now() + ttlMs })
 }
 
+// Fetch with retry and 429 backoff
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries = 3
+): Promise<Response> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, options)
+
+    if (response.status !== 429 || attempt === maxRetries) {
+      return response
+    }
+
+    // Read Retry-After header (seconds) or use exponential backoff
+    const retryAfter = response.headers.get('Retry-After')
+    const waitMs = retryAfter
+      ? parseInt(retryAfter, 10) * 1000
+      : Math.min(1000 * 2 ** attempt, 8000)
+
+    console.warn(`JustTCG 429 rate limited, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`)
+    await new Promise((resolve) => setTimeout(resolve, waitMs))
+  }
+
+  // Unreachable, but TypeScript needs it
+  throw new Error('Retry logic failed')
+}
+
 // Supabase client for persistent cache
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!url || !key) return null
   return createClient(url, key)
 }
@@ -168,7 +195,7 @@ export async function GET(
   console.log('JustTCG proxy - fetching from API:', url)
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       headers: {
         'x-api-key': API_KEY,
         'Accept': 'application/json',
@@ -179,7 +206,12 @@ export async function GET(
 
     if (!response.ok) {
       console.error('JustTCG API error:', data)
-      return NextResponse.json(data, { status: response.status })
+      const headers: HeadersInit = {}
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After')
+        if (retryAfter) headers['Retry-After'] = retryAfter
+      }
+      return NextResponse.json(data, { status: response.status, headers })
     }
 
     // Cache successful responses in both layers
