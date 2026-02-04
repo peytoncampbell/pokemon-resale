@@ -110,12 +110,12 @@ async function fetchAnalyticsClientSide(orgId: string): Promise<AnalyticsSummary
   // Get completed transactions - only fields needed for calculations
   const { data: transactionsData, error: txError } = await supabase
     .from('transactions')
-    .select('type, cash_in, fees')
+    .select('type, cash_in, fees, shipping_cost')
     .eq('organization_id', orgId)
     .eq('status', 'COMPLETED')
 
   if (txError) throw txError
-  const transactions = transactionsData as Pick<Transaction, 'type' | 'cash_in' | 'fees'>[] | null
+  const transactions = transactionsData as Pick<Transaction, 'type' | 'cash_in' | 'fees' | 'shipping_cost'>[] | null
 
   // Get pending procurements count - use head:true to only get count
   const { count: pendingProcurements, error: procError } = await supabase
@@ -146,8 +146,9 @@ async function fetchAnalyticsClientSide(orgId: string): Promise<AnalyticsSummary
   const sellTransactions = transactions?.filter((t) => t.type === 'SELL') || []
   const totalRevenue = sellTransactions.reduce((sum, t) => sum + Number(t.cash_in || 0), 0)
 
-  // Calculate total fees from all transactions
+  // Calculate total fees and shipping from all transactions
   const totalFees = transactions?.reduce((sum, t) => sum + Number(t.fees || 0), 0) || 0
+  const totalShipping = transactions?.reduce((sum, t) => sum + Number(t.shipping_cost || 0), 0) || 0
 
   // Calculate cost of sold items (inventory items marked as SOLD)
   const soldItems = inventory?.filter((item) => item.status === 'SOLD') || []
@@ -156,8 +157,8 @@ async function fetchAnalyticsClientSide(orgId: string): Promise<AnalyticsSummary
     0
   )
 
-  // Profit = Revenue - Cost of Goods Sold - Fees
-  const totalProfit = totalRevenue - soldItemsCost - totalFees
+  // Profit = Revenue - Cost of Goods Sold - Fees - Shipping
+  const totalProfit = totalRevenue - soldItemsCost - totalFees - totalShipping
 
   // Inventory by status
   const inventoryByStatus = {
@@ -325,11 +326,12 @@ function calculateSetProfitability(
         .filter((item) => item.direction === 'OUT')
         .forEach((item) => {
           if (item.inventory_id) {
-            // Calculate proportional fees
+            // Calculate proportional fees + shipping
             const totalValue = t.transaction_items
               .filter((i) => i.direction === 'OUT')
               .reduce((sum, i) => sum + i.total_value, 0)
-            const itemFees = totalValue > 0 ? (t.fees * item.total_value) / totalValue : 0
+            const proportion = totalValue > 0 ? item.total_value / totalValue : 0
+            const itemFees = (t.fees + Number(t.shipping_cost || 0)) * proportion
 
             soldItems.set(item.inventory_id, {
               sellDate: new Date(t.transaction_date),
@@ -432,7 +434,7 @@ function calculatePlatformProfitability(
         existing.netProfit += item.total_value - cost
       })
 
-      existing.totalFees += t.fees
+      existing.totalFees += t.fees + Number(t.shipping_cost || 0)
 
       platformMap.set(platform, existing)
     })

@@ -48,7 +48,7 @@ export function CommandDock({ onMobileMenuToggle }: CommandDockProps) {
                     </div>
                     <span className="font-bold text-lg text-white">Pokemon Resale</span>
                 </div>
-                <Button variant="ghost" size="icon" onClick={onMobileMenuToggle}>
+                <Button variant="ghost" size="icon" onClick={onMobileMenuToggle} aria-label="Toggle navigation menu">
                     <Menu className="h-6 w-6 text-white" />
                 </Button>
             </div>

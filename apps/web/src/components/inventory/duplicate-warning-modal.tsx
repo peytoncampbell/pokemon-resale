@@ -33,16 +33,16 @@ export function DuplicateWarningModal({
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-lg max-h-[80vh] overflow-hidden bg-vision-navy rounded-2xl shadow-2xl m-4 flex flex-col border border-white/10">
+      <div role="dialog" aria-modal="true" aria-labelledby="modal-title-duplicate-warning" className="relative w-full max-w-lg max-h-[80vh] overflow-hidden bg-vision-navy rounded-2xl shadow-2xl m-4 flex flex-col border border-white/10">
         <div className="flex items-center gap-3 border-b border-white/10 px-6 py-4">
           <div className="h-10 w-10 rounded-xl bg-yellow-500/20 flex items-center justify-center">
             <AlertTriangle className="h-5 w-5 text-yellow-400" />
           </div>
           <div className="flex-1">
-            <h2 className="text-lg font-bold text-white">Duplicate Card Found</h2>
+            <h2 id="modal-title-duplicate-warning" className="text-lg font-bold text-white">Duplicate Card Found</h2>
             <p className="text-sm text-white/60">This card already exists in your inventory</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-xl">
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-xl" aria-label="Close dialog">
             <X className="h-5 w-5" />
           </Button>
         </div>

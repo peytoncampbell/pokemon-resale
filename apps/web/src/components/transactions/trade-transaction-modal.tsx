@@ -217,12 +217,12 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-background/90 backdrop-blur-md" onClick={handleClose} />
-      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden bg-background rounded-3xl shadow-2xl m-4 flex flex-col border-none">
+      <div role="dialog" aria-modal="true" aria-labelledby="modal-title-trade" className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden bg-background rounded-3xl shadow-2xl m-4 flex flex-col border-none">
         <div className="flex items-center justify-between border-b bg-gradient-to-r from-background to-accent/5 px-6 py-5">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-vision-purple to-vision-pink bg-clip-text text-transparent">
+          <h2 id="modal-title-trade" className="text-2xl font-bold bg-gradient-to-r from-vision-purple to-vision-pink bg-clip-text text-transparent">
             Record Trade Transaction
           </h2>
-          <Button variant="ghost" size="icon" onClick={handleClose} className="rounded-xl hover:bg-accent/50">
+          <Button variant="ghost" size="icon" onClick={handleClose} className="rounded-xl hover:bg-accent/50" aria-label="Close dialog">
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -490,6 +490,7 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
                             size="icon"
                             className="h-6 w-6 text-red-400"
                             onClick={() => handleRemoveOutItem(oi.item.id)}
+                            aria-label={`Remove ${oi.item.card_name} from give list`}
                           >
                             <X className="h-3 w-3" />
                           </Button>
@@ -531,6 +532,7 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
                             size="icon"
                             className="h-6 w-6 text-red-400"
                             onClick={() => handleRemoveInItem(ii.card.id)}
+                            aria-label={`Remove ${ii.card.name} from receive list`}
                           >
                             <X className="h-3 w-3" />
                           </Button>

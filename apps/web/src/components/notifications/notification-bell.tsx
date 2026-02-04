@@ -66,6 +66,7 @@ export function NotificationBell() {
           isOpen ? 'bg-white/10' : 'hover:bg-white/5',
           unreadCount && unreadCount > 0 && 'text-vision-blue'
         )}
+        aria-label={unreadCount && unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
       >
         {unreadCount && unreadCount > 0 ? (
           <BellRing className="h-5 w-5" />

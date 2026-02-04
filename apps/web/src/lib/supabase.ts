@@ -364,6 +364,7 @@ export type Database = {
           cash_out: number
           cash_in: number
           fees: number
+          shipping_cost: number
           transaction_date: string
           status: 'PENDING' | 'COMPLETED' | 'CANCELLED'
           notes: string | null
@@ -381,6 +382,7 @@ export type Database = {
           cash_out?: number
           cash_in?: number
           fees?: number
+          shipping_cost?: number
           transaction_date?: string
           status?: 'PENDING' | 'COMPLETED' | 'CANCELLED'
           notes?: string | null
@@ -398,6 +400,7 @@ export type Database = {
           cash_out?: number
           cash_in?: number
           fees?: number
+          shipping_cost?: number
           transaction_date?: string
           status?: 'PENDING' | 'COMPLETED' | 'CANCELLED'
           notes?: string | null

@@ -1,7 +1,8 @@
 "use client"
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { QueryClient, QueryClientProvider, MutationCache } from "@tanstack/react-query"
 import { useState } from "react"
+import { toast } from "sonner"
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -13,6 +14,11 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             refetchOnWindowFocus: false,
           },
         },
+        mutationCache: new MutationCache({
+          onError: (error) => {
+            toast.error(error.message)
+          },
+        }),
       })
   )
 

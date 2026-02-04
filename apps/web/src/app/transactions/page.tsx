@@ -22,6 +22,7 @@ import { TransactionCard } from '@/components/transactions/transaction-card'
 import { BuyTransactionModal } from '@/components/transactions/buy-transaction-modal'
 import { SellTransactionModal } from '@/components/transactions/sell-transaction-modal'
 import { TradeTransactionModal } from '@/components/transactions/trade-transaction-modal'
+import { ErrorBoundary } from '@/components/error-boundary'
 
 export default function TransactionsPage() {
   const [typeFilter, setTypeFilter] = useState<TransactionType | undefined>()
@@ -76,6 +77,7 @@ export default function TransactionsPage() {
         {/* Filters */}
         <TransactionFilters activeType={typeFilter} onTypeChange={setTypeFilter} />
 
+        <ErrorBoundary fallback={<div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">Failed to load transactions</div>}>
         {/* Transaction count */}
         <SummaryBar
           left={
@@ -143,6 +145,7 @@ export default function TransactionsPage() {
             )}
           </>
         )}
+        </ErrorBoundary>
       </div>
 
       {/* Modals */}

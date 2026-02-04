@@ -60,6 +60,7 @@ export interface CreateTransactionData {
   cash_out?: number
   cash_in?: number
   fees?: number
+  shipping_cost?: number
   transaction_date?: string
   status?: TransactionStatus
   notes?: string | null
@@ -200,6 +201,7 @@ export function useCreateTransaction() {
         cash_out: data.cash_out || 0,
         cash_in: data.cash_in || 0,
         fees: data.fees || 0,
+        shipping_cost: data.shipping_cost || 0,
         transaction_date: data.transaction_date,
         status: data.status || 'COMPLETED',
         notes: data.notes,

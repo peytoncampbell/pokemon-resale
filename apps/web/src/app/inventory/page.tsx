@@ -21,6 +21,7 @@ import { SkeletonInventoryCard } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { AnimatedGrid, AnimatedList } from '@/components/ui/animated-list'
 import { HoloCard } from '@/components/ui/holo-card'
+import { ErrorBoundary } from '@/components/error-boundary'
 import Image from 'next/image'
 
 const STATUS_COLORS = {
@@ -189,6 +190,7 @@ export default function InventoryPage() {
           right={`Total Value: ${formatConverted(totalValue)}`}
         />
 
+        <ErrorBoundary fallback={<div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">Failed to load inventory</div>}>
         {/* Loading State */}
         {isLoading && (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -360,6 +362,7 @@ export default function InventoryPage() {
             )}
           </>
         )}
+        </ErrorBoundary>
       </div>
 
       <AddInventoryModal

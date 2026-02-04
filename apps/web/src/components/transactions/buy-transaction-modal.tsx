@@ -162,12 +162,12 @@ export function BuyTransactionModal({ open, onClose }: BuyTransactionModalProps)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-background/90 backdrop-blur-md" onClick={handleClose} />
-      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden bg-background rounded-3xl shadow-2xl m-4 flex flex-col border-none">
+      <div role="dialog" aria-modal="true" aria-labelledby="modal-title-buy" className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden bg-background rounded-3xl shadow-2xl m-4 flex flex-col border-none">
         <div className="flex items-center justify-between border-b bg-gradient-to-r from-background to-accent/5 px-6 py-5">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-vision-blue to-vision-cyan bg-clip-text text-transparent">
+          <h2 id="modal-title-buy" className="text-2xl font-bold bg-gradient-to-r from-vision-blue to-vision-cyan bg-clip-text text-transparent">
             Record Buy Transaction
           </h2>
-          <Button variant="ghost" size="icon" onClick={handleClose} className="rounded-xl hover:bg-accent/50">
+          <Button variant="ghost" size="icon" onClick={handleClose} className="rounded-xl hover:bg-accent/50" aria-label="Close dialog">
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -299,6 +299,7 @@ export function BuyTransactionModal({ open, onClose }: BuyTransactionModalProps)
                           size="icon"
                           className="h-8 w-8"
                           onClick={() => handleUpdateItem(item.card.id, { quantity: Math.max(1, item.quantity - 1) })}
+                          aria-label={`Decrease quantity of ${item.card.name}`}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
@@ -309,6 +310,7 @@ export function BuyTransactionModal({ open, onClose }: BuyTransactionModalProps)
                           size="icon"
                           className="h-8 w-8"
                           onClick={() => handleUpdateItem(item.card.id, { quantity: item.quantity + 1 })}
+                          aria-label={`Increase quantity of ${item.card.name}`}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
@@ -346,6 +348,7 @@ export function BuyTransactionModal({ open, onClose }: BuyTransactionModalProps)
                         size="icon"
                         className="h-8 w-8 text-red-400 hover:bg-red-500/10"
                         onClick={() => handleRemoveItem(item.card.id)}
+                        aria-label={`Remove ${item.card.name}`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

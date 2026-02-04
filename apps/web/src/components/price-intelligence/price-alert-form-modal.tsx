@@ -107,12 +107,13 @@ export function PriceAlertFormModal({ open, onClose, preselectedCard }: PriceAle
       />
 
       {/* Modal */}
-      <Card className="relative z-10 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+      <Card role="dialog" aria-modal="true" aria-labelledby="modal-title-price-alert" className="relative z-10 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <CardTitle className="text-lg">Create Price Alert</CardTitle>
+          <CardTitle id="modal-title-price-alert" className="text-lg">Create Price Alert</CardTitle>
           <button
             onClick={onClose}
             className="p-1 rounded-lg hover:bg-white/10 transition-colors"
+            aria-label="Close dialog"
           >
             <X className="h-5 w-5 text-white/60" />
           </button>
@@ -204,6 +205,7 @@ export function PriceAlertFormModal({ open, onClose, preselectedCard }: PriceAle
                     type="button"
                     onClick={() => setSelectedCard(null)}
                     className="p-1.5 rounded-lg hover:bg-white/10"
+                    aria-label="Clear selected card"
                   >
                     <X className="h-4 w-4 text-white/60" />
                   </button>

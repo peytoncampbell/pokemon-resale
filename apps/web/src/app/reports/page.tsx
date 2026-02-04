@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import type { ReportConfig, ReportType, ReportData, DateRangePreset } from '@/types/reports'
 import { REPORT_TEMPLATES, DATE_RANGE_PRESETS } from '@/types/reports'
+import { ErrorBoundary } from '@/components/error-boundary'
 
 const REPORT_ICONS: Record<string, typeof TrendingUp> = {
   TrendingUp,
@@ -82,6 +83,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Report Content */}
+        <ErrorBoundary fallback={<div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">Failed to load reports</div>}>
         {reportData && selectedReport ? (
           <ReportViewer
             data={reportData}
@@ -123,6 +125,7 @@ export default function ReportsPage() {
               })}
           </div>
         )}
+        </ErrorBoundary>
       </div>
     </MainLayout>
   )

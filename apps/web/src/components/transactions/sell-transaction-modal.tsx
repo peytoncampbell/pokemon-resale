@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -20,12 +20,21 @@ const COUNTERPARTY_TYPES = [
   { value: 'OTHER', label: 'Other' },
 ] as const
 
+const PLATFORM_PRESETS = [
+  { value: 'eBay', label: 'eBay', feeRate: 0.1325 },
+  { value: 'TCGPlayer', label: 'TCGPlayer', feeRate: 0.1025 },
+  { value: 'Facebook', label: 'Facebook', feeRate: 0 },
+  { value: 'Local', label: 'Local', feeRate: 0 },
+  { value: 'Other', label: 'Other', feeRate: null },
+] as const
+
 const sellTransactionSchema = z.object({
   counterparty_name: z.string().min(1, 'Buyer name is required'),
   counterparty_type: z.enum(['STORE', 'PERSON', 'ONLINE', 'OTHER']),
   platform: z.string().optional(),
   sale_price: z.number().min(0, 'Sale price must be positive'),
   fees: z.number().min(0).optional(),
+  shipping_cost: z.number().min(0).optional(),
   transaction_date: z.string().optional(),
   notes: z.string().optional(),
 })
@@ -46,6 +55,8 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedItems, setSelectedItems] = useState<SelectedInventoryItem[]>([])
   const [step, setStep] = useState<'select' | 'details'>('select')
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('eBay')
+  const [feeManualOverride, setFeeManualOverride] = useState(false)
 
   const { data: inventoryItems, isLoading } = useInventoryItems('IN_STOCK')
   const createTransaction = useCreateTransaction()
@@ -68,6 +79,7 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
       counterparty_type: 'PERSON',
       transaction_date: new Date().toISOString().split('T')[0],
       fees: 0,
+      shipping_cost: 0,
     },
   })
 
@@ -77,7 +89,24 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
   )
   const salePrice = watch('sale_price') || 0
   const fees = watch('fees') || 0
-  const netProfit = salePrice - fees - totalAcquisitionCost
+  const shippingCost = watch('shipping_cost') || 0
+  const netProfit = salePrice - fees - shippingCost - totalAcquisitionCost
+
+  // Auto-calculate fees when platform or sale price changes (unless manually overridden)
+  useEffect(() => {
+    if (feeManualOverride) return
+    const preset = PLATFORM_PRESETS.find((p) => p.value === selectedPlatform)
+    if (preset && preset.feeRate !== null) {
+      const calculatedFees = Math.round(salePrice * preset.feeRate * 100) / 100
+      setValue('fees', calculatedFees)
+    }
+  }, [salePrice, selectedPlatform, feeManualOverride, setValue])
+
+  const handlePlatformChange = (platform: string) => {
+    setSelectedPlatform(platform)
+    setFeeManualOverride(false)
+    setValue('platform', platform === 'Other' ? '' : platform)
+  }
 
   const handleSelectItem = (item: InventoryItem) => {
     const existing = selectedItems.find((si) => si.item.id === item.id)
@@ -119,10 +148,11 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
       type: 'SELL',
       counterparty_name: data.counterparty_name,
       counterparty_type: data.counterparty_type,
-      platform: data.platform || undefined,
+      platform: data.platform || selectedPlatform,
       transaction_date: data.transaction_date,
       cash_in: data.sale_price,
       fees: data.fees || 0,
+      shipping_cost: data.shipping_cost || 0,
       notes: data.notes,
       items,
     })
@@ -134,6 +164,8 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
     setSearchQuery('')
     setSelectedItems([])
     setStep('select')
+    setSelectedPlatform('eBay')
+    setFeeManualOverride(false)
     reset()
     onClose()
   }
@@ -153,12 +185,17 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-background/90 backdrop-blur-md" onClick={handleClose} />
-      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden bg-background rounded-3xl shadow-2xl m-4 flex flex-col border-none">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title-sell"
+        className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden bg-background rounded-3xl shadow-2xl m-4 flex flex-col border-none"
+      >
         <div className="flex items-center justify-between border-b bg-gradient-to-r from-background to-accent/5 px-6 py-5">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+          <h2 id="modal-title-sell" className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
             Record Sale Transaction
           </h2>
-          <Button variant="ghost" size="icon" onClick={handleClose} className="rounded-xl hover:bg-accent/50">
+          <Button variant="ghost" size="icon" onClick={handleClose} className="rounded-xl hover:bg-accent/50" aria-label="Close sell transaction modal">
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -298,6 +335,7 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
                         size="icon"
                         className="h-8 w-8 text-red-400 hover:bg-red-500/10"
                         onClick={() => handleRemoveItem(si.item.id)}
+                        aria-label={`Remove ${si.item.card_name}`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -334,7 +372,29 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
                 </div>
               </div>
 
-              <div className="grid gap-5 sm:grid-cols-3">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold">Platform</label>
+                <select
+                  value={selectedPlatform}
+                  onChange={(e) => handlePlatformChange(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/50 transition-all appearance-none cursor-pointer"
+                >
+                  {PLATFORM_PRESETS.map((p) => (
+                    <option key={p.value} value={p.value} className="bg-vision-navy text-white">
+                      {p.label}{p.feeRate !== null ? ` (${(p.feeRate * 100).toFixed(2)}%)` : ''}
+                    </option>
+                  ))}
+                </select>
+                {selectedPlatform === 'Other' && (
+                  <input
+                    {...register('platform')}
+                    placeholder="Enter platform name"
+                    className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/20 transition-all mt-2"
+                  />
+                )}
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">
                     Sale Price <span className="text-destructive">*</span>
@@ -354,13 +414,35 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold">Fees</label>
+                  <label className="text-sm font-semibold">
+                    Fees
+                    {!feeManualOverride && selectedPlatform !== 'Other' && (
+                      <span className="text-xs text-white/40 ml-1">(auto)</span>
+                    )}
+                  </label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                     <input
                       type="number"
                       step="0.01"
                       {...register('fees', { valueAsNumber: true })}
+                      onChange={(e) => {
+                        setFeeManualOverride(true)
+                        setValue('fees', Number(e.target.value))
+                      }}
+                      className="w-full rounded-xl border border-input bg-background pl-8 pr-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/20 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold">Shipping</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      {...register('shipping_cost', { valueAsNumber: true })}
                       className="w-full rounded-xl border border-input bg-background pl-8 pr-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/20 transition-all"
                     />
                   </div>
@@ -374,15 +456,6 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
                     className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/20 transition-all"
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-semibold">Platform (optional)</label>
-                <input
-                  {...register('platform')}
-                  placeholder="eBay, TCGPlayer, Facebook, etc."
-                  className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/20 transition-all"
-                />
               </div>
 
               <div className="space-y-2">
@@ -408,6 +481,12 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
                   <div className="flex justify-between text-sm text-white/60 mb-1">
                     <span>Fees:</span>
                     <span>-{formatCurrency(fees, currency)}</span>
+                  </div>
+                )}
+                {shippingCost > 0 && (
+                  <div className="flex justify-between text-sm text-white/60 mb-1">
+                    <span>Shipping:</span>
+                    <span>-{formatCurrency(shippingCost, currency)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-white/10 mt-2">

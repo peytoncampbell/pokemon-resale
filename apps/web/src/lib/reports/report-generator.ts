@@ -110,7 +110,7 @@ function generateProfitLossReport(
   })
 
   // Group by month
-  const monthlyData: Record<string, { revenue: number; cost: number; fees: number }> = {}
+  const monthlyData: Record<string, { revenue: number; cost: number; fees: number; shipping: number }> = {}
 
   // Get inventory cost map
   const inventoryCostMap = new Map<string, number>()
@@ -119,12 +119,13 @@ function generateProfitLossReport(
   filteredTx.forEach((t) => {
     const month = new Date(t.transaction_date).toISOString().slice(0, 7) // YYYY-MM
     if (!monthlyData[month]) {
-      monthlyData[month] = { revenue: 0, cost: 0, fees: 0 }
+      monthlyData[month] = { revenue: 0, cost: 0, fees: 0, shipping: 0 }
     }
 
     if (t.type === 'SELL') {
       monthlyData[month].revenue += Number(t.cash_in || 0)
       monthlyData[month].fees += Number(t.fees || 0)
+      monthlyData[month].shipping += Number(t.shipping_cost || 0)
 
       // Calculate cost of sold items
       t.transaction_items
@@ -140,13 +141,14 @@ function generateProfitLossReport(
   const rows = Object.entries(monthlyData)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([period, data]) => {
-      const profit = data.revenue - data.cost - data.fees
+      const profit = data.revenue - data.cost - data.fees - data.shipping
       const margin = data.revenue > 0 ? (profit / data.revenue) * 100 : 0
       return {
         period: formatMonth(period),
         revenue: data.revenue,
         cost: data.cost,
         fees: data.fees,
+        shipping: data.shipping,
         profit,
         margin,
       }
@@ -158,9 +160,10 @@ function generateProfitLossReport(
       revenue: acc.revenue + (row.revenue as number),
       cost: acc.cost + (row.cost as number),
       fees: acc.fees + (row.fees as number),
+      shipping: acc.shipping + (row.shipping as number),
       profit: acc.profit + (row.profit as number),
     }),
-    { revenue: 0, cost: 0, fees: 0, profit: 0 }
+    { revenue: 0, cost: 0, fees: 0, shipping: 0, profit: 0 }
   )
 
   const totalMargin = totals.revenue > 0 ? (totals.profit / totals.revenue) * 100 : 0
@@ -177,6 +180,7 @@ function generateProfitLossReport(
       'Total Revenue': totals.revenue,
       'Total COGS': totals.cost,
       'Total Fees': totals.fees,
+      'Total Shipping': totals.shipping,
       'Net Profit': totals.profit,
       'Profit Margin': `${totalMargin.toFixed(1)}%`,
     },
@@ -185,6 +189,7 @@ function generateProfitLossReport(
       { key: 'revenue', label: 'Revenue', type: 'currency', align: 'right' },
       { key: 'cost', label: 'COGS', type: 'currency', align: 'right' },
       { key: 'fees', label: 'Fees', type: 'currency', align: 'right' },
+      { key: 'shipping', label: 'Shipping', type: 'currency', align: 'right' },
       { key: 'profit', label: 'Profit', type: 'currency', align: 'right' },
       { key: 'margin', label: 'Margin', type: 'percent', align: 'right' },
     ],
@@ -284,18 +289,19 @@ function generateSalesByPlatformReport(
 
   const byPlatform: Record<
     string,
-    { transactions: number; items: number; revenue: number; cost: number; fees: number }
+    { transactions: number; items: number; revenue: number; cost: number; fees: number; shipping: number }
   > = {}
 
   filteredTx.forEach((t) => {
     const platform = t.platform || 'Other'
     if (!byPlatform[platform]) {
-      byPlatform[platform] = { transactions: 0, items: 0, revenue: 0, cost: 0, fees: 0 }
+      byPlatform[platform] = { transactions: 0, items: 0, revenue: 0, cost: 0, fees: 0, shipping: 0 }
     }
 
     byPlatform[platform].transactions++
     byPlatform[platform].revenue += Number(t.cash_in || 0)
     byPlatform[platform].fees += Number(t.fees || 0)
+    byPlatform[platform].shipping += Number(t.shipping_cost || 0)
 
     t.transaction_items
       .filter((i) => i.direction === 'OUT')
@@ -309,7 +315,7 @@ function generateSalesByPlatformReport(
 
   const rows = Object.entries(byPlatform)
     .map(([platform, data]) => {
-      const profit = data.revenue - data.cost - data.fees
+      const profit = data.revenue - data.cost - data.fees - data.shipping
       const margin = data.revenue > 0 ? (profit / data.revenue) * 100 : 0
       const feePercent = data.revenue > 0 ? (data.fees / data.revenue) * 100 : 0
       return {
@@ -539,6 +545,7 @@ function generateTaxSummaryReport(
   let totalProceeds = 0
   let totalCostBasis = 0
   let totalFees = 0
+  let totalShipping = 0
 
   filteredTx.forEach((t) => {
     t.transaction_items
@@ -549,15 +556,18 @@ function generateTaxSummaryReport(
         const costBasis = invItem?.acquisition_cost || 0
         const gainLoss = proceeds - costBasis
 
-        // Proportional fees
+        // Proportional fees and shipping
         const totalTxValue = t.transaction_items
           .filter((i) => i.direction === 'OUT')
           .reduce((sum, i) => sum + i.total_value, 0)
-        const itemFees = totalTxValue > 0 ? (t.fees * item.total_value) / totalTxValue : 0
+        const proportion = totalTxValue > 0 ? item.total_value / totalTxValue : 0
+        const itemFees = t.fees * proportion
+        const itemShipping = Number(t.shipping_cost || 0) * proportion
 
         totalProceeds += proceeds
         totalCostBasis += costBasis
         totalFees += itemFees
+        totalShipping += itemShipping
 
         rows.push({
           dateSold: new Date(t.transaction_date).toLocaleDateString(),
@@ -565,12 +575,12 @@ function generateTaxSummaryReport(
           dateAcquired: invItem ? new Date(invItem.created_at).toLocaleDateString() : 'N/A',
           proceeds,
           costBasis,
-          gainLoss: gainLoss - itemFees,
+          gainLoss: gainLoss - itemFees - itemShipping,
         })
       })
   })
 
-  const netGainLoss = totalProceeds - totalCostBasis - totalFees
+  const netGainLoss = totalProceeds - totalCostBasis - totalFees - totalShipping
 
   return {
     title: 'Tax Summary Report',
@@ -584,6 +594,7 @@ function generateTaxSummaryReport(
       'Total Proceeds': totalProceeds,
       'Total Cost Basis': totalCostBasis,
       'Total Fees': totalFees,
+      'Total Shipping': totalShipping,
       'Net Gain/Loss': netGainLoss,
       'Transactions': rows.length,
     },
