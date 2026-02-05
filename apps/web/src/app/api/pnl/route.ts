@@ -98,9 +98,32 @@ export async function GET(request: NextRequest) {
         inventoryMap.get(invId)!.lots.push(lot)
       }
 
-      // Get latest prices for inventory items (from price_snapshots view if exists, or fallback)
+      // Get latest prices for inventory items from latest_prices view
       const inventoryIds = Array.from(inventoryMap.keys())
       const unrealizedGains: UnrealizedGain[] = []
+
+      // Collect unique card_ids to batch-query latest_prices
+      const cardIds = new Set<string>()
+      for (const { inventory } of inventoryMap.values()) {
+        if (inventory?.card_id) cardIds.add(inventory.card_id)
+      }
+
+      // Fetch latest prices for all card_ids in one query
+      const priceMap = new Map<string, number>()
+      if (cardIds.size > 0) {
+        const { data: prices } = await supabase
+          .from('latest_prices')
+          .select('card_id, market_price')
+          .in('card_id', Array.from(cardIds))
+
+        if (prices) {
+          for (const p of prices) {
+            if (p.market_price != null) {
+              priceMap.set(p.card_id, Number(p.market_price))
+            }
+          }
+        }
+      }
 
       for (const [invId, { inventory, lots }] of inventoryMap.entries()) {
         if (!inventory) continue
@@ -112,12 +135,8 @@ export async function GET(request: NextRequest) {
 
         const quantity = lots.reduce((sum: number, lot: any) => sum + lot.quantity_remaining, 0)
 
-        // Try to get latest market price (from price_snapshots or other source)
-        // For now, we'll fetch from a hypothetical latest_prices view or skip
-        let marketPrice: number | null = null
-
-        // TODO: Implement price lookup from price_snapshots table
-        // For MVP, return null for market price (will be added in UI integration)
+        // Get latest market price from price_snapshots via latest_prices view
+        const marketPrice = priceMap.get(inventory.card_id) ?? null
 
         const gains = calculateUnrealizedGain(costBasis, marketPrice, quantity)
 
@@ -279,6 +298,28 @@ async function getUnrealizedGains(supabase: any, organization_id: string): Promi
     inventoryMap.get(invId)!.lots.push(lot)
   }
 
+  // Batch-query latest_prices for all card_ids
+  const cardIds = new Set<string>()
+  for (const { inventory } of inventoryMap.values()) {
+    if (inventory?.card_id) cardIds.add(inventory.card_id)
+  }
+
+  const priceMap = new Map<string, number>()
+  if (cardIds.size > 0) {
+    const { data: prices } = await supabase
+      .from('latest_prices')
+      .select('card_id, market_price')
+      .in('card_id', Array.from(cardIds))
+
+    if (prices) {
+      for (const p of prices) {
+        if (p.market_price != null) {
+          priceMap.set(p.card_id, Number(p.market_price))
+        }
+      }
+    }
+  }
+
   const unrealizedGains: UnrealizedGain[] = []
 
   for (const [invId, { inventory, lots }] of inventoryMap.entries()) {
@@ -286,7 +327,7 @@ async function getUnrealizedGains(supabase: any, organization_id: string): Promi
 
     const costBasis = lots.reduce((sum: number, lot: any) => sum + (lot.quantity_remaining * lot.unit_cost), 0)
     const quantity = lots.reduce((sum: number, lot: any) => sum + lot.quantity_remaining, 0)
-    let marketPrice: number | null = null
+    const marketPrice = priceMap.get(inventory.card_id) ?? null
 
     const gains = calculateUnrealizedGain(costBasis, marketPrice, quantity)
 

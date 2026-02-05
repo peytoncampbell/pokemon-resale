@@ -181,6 +181,49 @@ export function usePriceRefresh() {
   }
 }
 
+// Hook to trigger batch price refresh for multiple cards
+export function useBatchPriceRefresh() {
+  const queryClient = useQueryClient()
+
+  const mutation = useMutation({
+    mutationFn: async (cards: { cardId: string; cardName: string; gameType: GameType; setName?: string }[]) => {
+      if (cards.length === 0) return { data: { succeeded: 0, failed: 0, results: [] } }
+
+      const authHeaders = await getAuthHeaders()
+      const response = await fetch('/api/prices/scrape', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
+        body: JSON.stringify({
+          cards: cards.slice(0, 20), // API max is 20
+          batchSize: 5,
+          delayBetweenMs: 2000,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to refresh prices')
+      }
+
+      return response.json()
+    },
+    onSuccess: () => {
+      // Invalidate price and P&L queries to refetch with new prices
+      queryClient.invalidateQueries({ queryKey: ['price-history'] })
+      queryClient.invalidateQueries({ queryKey: ['pnl'] })
+    },
+  })
+
+  return {
+    refreshPrices: mutation.mutate,
+    refreshPricesAsync: mutation.mutateAsync,
+    isRefreshing: mutation.isPending,
+  }
+}
+
 // Hook to get price comparison across all conditions
 export function usePriceComparison(cardId: string | undefined) {
   return useQuery({

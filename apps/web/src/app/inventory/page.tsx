@@ -12,7 +12,7 @@ import { useInventoryFilters, filterInventory, getUniqueLocations, getFilterCoun
 import { useExportInventory } from '@/hooks/use-export'
 import { useCurrency } from '@/hooks/use-currency'
 import { useUnrealizedGains } from '@/hooks/use-pnl'
-import { Grid3X3, List, Plus, Search, MapPin, Trash2, DollarSign, Upload } from 'lucide-react'
+import { Grid3X3, List, Plus, Search, MapPin, Trash2, DollarSign, Upload, RefreshCw } from 'lucide-react'
 import { AddInventoryModal } from '@/components/inventory/add-inventory-modal'
 import { BulkActionBar } from '@/components/inventory/bulk-action-bar'
 import { FilterPanel } from '@/components/inventory/filter-panel'
@@ -23,6 +23,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { AnimatedGrid, AnimatedList } from '@/components/ui/animated-list'
 import { HoloCard } from '@/components/ui/holo-card'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { useBatchPriceRefresh } from '@/hooks/use-price-history'
 import { SellModal } from '@/components/inventory/sell-modal'
 import { StatusBadge } from '@/components/inventory/status-badge'
 import { PnLColumn } from '@/components/inventory/pnl-column'
@@ -58,6 +59,7 @@ export default function InventoryPage() {
 
   // Fetch unrealized gains for P&L column
   const { data: unrealizedGains } = useUnrealizedGains()
+  const { refreshPrices, isRefreshing } = useBatchPriceRefresh()
 
   // Apply filters and sorting
   const filteredItems = useMemo(() => {
@@ -127,6 +129,19 @@ export default function InventoryPage() {
     return gain?.current_market_price ?? null
   }
 
+  const handleRefreshPrices = () => {
+    if (!items || items.length === 0) return
+    const cards = items
+      .filter(item => item.status === 'IN_STOCK' || item.status === 'LISTED')
+      .map(item => ({
+        cardId: item.card_id,
+        cardName: item.card_name,
+        gameType: item.game_type as 'pokemon' | 'onepiece',
+        setName: item.set_name || undefined,
+      }))
+    refreshPrices(cards)
+  }
+
   const handleExport = async (format: 'csv' | 'xlsx') => {
     if (filteredItems) {
       await exportInventory(filteredItems, format)
@@ -150,6 +165,10 @@ export default function InventoryPage() {
           description="Manage your Pokemon card collection"
           actions={
             <div className="flex gap-2">
+              <Button variant="outline" onClick={handleRefreshPrices} disabled={isRefreshing || !items?.length}>
+                <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh Prices'}
+              </Button>
               <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
                 <Upload className="mr-2 h-4 w-4" />
                 Import CSV
