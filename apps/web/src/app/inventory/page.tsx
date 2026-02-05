@@ -28,6 +28,7 @@ const STATUS_COLORS = {
   IN_STOCK: 'success',
   LISTED: 'info',
   SOLD: 'secondary',
+  SHIPPED: 'default',
 } as const
 
 export default function InventoryPage() {

@@ -92,7 +92,7 @@ export type Database = {
           condition: 'NM' | 'LP' | 'MP' | 'HP' | 'DMG'
           acquisition_cost: number
           quantity: number
-          status: 'IN_STOCK' | 'LISTED' | 'SOLD'
+          status: 'IN_STOCK' | 'LISTED' | 'SOLD' | 'SHIPPED'
           notes: string | null
           procurement_id: string | null
           game_type: 'pokemon' | 'onepiece'
@@ -112,7 +112,7 @@ export type Database = {
           condition?: 'NM' | 'LP' | 'MP' | 'HP' | 'DMG'
           acquisition_cost?: number
           quantity?: number
-          status?: 'IN_STOCK' | 'LISTED' | 'SOLD'
+          status?: 'IN_STOCK' | 'LISTED' | 'SOLD' | 'SHIPPED'
           notes?: string | null
           procurement_id?: string | null
           game_type?: 'pokemon' | 'onepiece'
@@ -132,7 +132,7 @@ export type Database = {
           condition?: 'NM' | 'LP' | 'MP' | 'HP' | 'DMG'
           acquisition_cost?: number
           quantity?: number
-          status?: 'IN_STOCK' | 'LISTED' | 'SOLD'
+          status?: 'IN_STOCK' | 'LISTED' | 'SOLD' | 'SHIPPED'
           notes?: string | null
           procurement_id?: string | null
           game_type?: 'pokemon' | 'onepiece'
@@ -365,6 +365,7 @@ export type Database = {
           cash_in: number
           fees: number
           shipping_cost: number
+          fee_metadata: Record<string, unknown>
           transaction_date: string
           status: 'PENDING' | 'COMPLETED' | 'CANCELLED'
           notes: string | null
@@ -383,6 +384,7 @@ export type Database = {
           cash_in?: number
           fees?: number
           shipping_cost?: number
+          fee_metadata?: Record<string, unknown>
           transaction_date?: string
           status?: 'PENDING' | 'COMPLETED' | 'CANCELLED'
           notes?: string | null
@@ -401,6 +403,7 @@ export type Database = {
           cash_in?: number
           fees?: number
           shipping_cost?: number
+          fee_metadata?: Record<string, unknown>
           transaction_date?: string
           status?: 'PENDING' | 'COMPLETED' | 'CANCELLED'
           notes?: string | null
@@ -743,6 +746,110 @@ export type Database = {
         }
         Relationships: []
       }
+      acquisition_lots: {
+        Row: {
+          id: string
+          inventory_id: string
+          organization_id: string
+          quantity_total: number
+          quantity_remaining: number
+          unit_cost: number
+          acquisition_date: string
+          grading_cost: number
+          procurement_id: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          inventory_id: string
+          organization_id: string
+          quantity_total: number
+          quantity_remaining: number
+          unit_cost: number
+          acquisition_date: string
+          grading_cost?: number
+          procurement_id?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          inventory_id?: string
+          organization_id?: string
+          quantity_total?: number
+          quantity_remaining?: number
+          unit_cost?: number
+          acquisition_date?: string
+          grading_cost?: number
+          procurement_id?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'acquisition_lots_inventory_id_fkey'
+            columns: ['inventory_id']
+            isOneToOne: false
+            referencedRelation: 'inventory'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'acquisition_lots_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      import_staging: {
+        Row: {
+          id: string
+          session_id: string
+          organization_id: string
+          row_number: number
+          raw_data: Record<string, unknown>
+          is_valid: boolean
+          validation_errors: string[] | null
+          normalized_data: Record<string, unknown> | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          organization_id: string
+          row_number: number
+          raw_data: Record<string, unknown>
+          is_valid?: boolean
+          validation_errors?: string[] | null
+          normalized_data?: Record<string, unknown> | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          organization_id?: string
+          row_number?: number
+          raw_data?: Record<string, unknown>
+          is_valid?: boolean
+          validation_errors?: string[] | null
+          normalized_data?: Record<string, unknown> | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'import_staging_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -777,6 +884,18 @@ export type Database = {
             value: number
           }[]
         }
+      }
+      consume_lots_fifo: {
+        Args: { p_inventory_id: string; p_quantity: number }
+        Returns: {
+          lot_id: string
+          quantity_consumed: number
+          unit_cost: number
+        }[]
+      }
+      validate_inventory_import: {
+        Args: { p_session_id: string }
+        Returns: void
       }
     }
     Enums: {
@@ -834,3 +953,9 @@ export type TransactionItemInsert = Tables['transaction_items']['Insert']
 export type BusinessSettings = Tables['business_settings']['Row']
 export type BusinessSettingsInsert = Tables['business_settings']['Insert']
 export type BusinessSettingsUpdate = Tables['business_settings']['Update']
+export type AcquisitionLot = Tables['acquisition_lots']['Row']
+export type AcquisitionLotInsert = Tables['acquisition_lots']['Insert']
+export type AcquisitionLotUpdate = Tables['acquisition_lots']['Update']
+export type ImportStaging = Tables['import_staging']['Row']
+export type ImportStagingInsert = Tables['import_staging']['Insert']
+export type ImportStagingUpdate = Tables['import_staging']['Update']
