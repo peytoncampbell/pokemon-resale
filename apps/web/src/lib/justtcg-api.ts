@@ -2,6 +2,8 @@
 // Docs: https://api.justtcg.com
 // Uses server-side proxy to keep API key secure
 
+import { supabase } from '@/lib/supabase'
+
 const JUSTTCG_API_BASE = '/api/justtcg'
 
 // Game IDs used by JustTCG
@@ -57,6 +59,12 @@ export interface JustTCGResponse<T> {
   error?: string
 }
 
+async function getAuthHeaders(): Promise<HeadersInit> {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) return {}
+  return { Authorization: `Bearer ${session.access_token}` }
+}
+
 async function fetchJustTCG<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
   const searchParams = new URLSearchParams()
   if (params) {
@@ -68,9 +76,11 @@ async function fetchJustTCG<T>(endpoint: string, params?: Record<string, string>
   const queryString = searchParams.toString()
   const url = `${JUSTTCG_API_BASE}${endpoint}${queryString ? `?${queryString}` : ''}`
 
+  const authHeaders = await getAuthHeaders()
   const response = await fetch(url, {
     headers: {
       'Accept': 'application/json',
+      ...authHeaders,
     },
   })
 

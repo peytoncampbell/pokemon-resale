@@ -8,14 +8,14 @@ import type { PriceSnapshot, PriceWithFreshness, PriceHistoryPoint } from './typ
 export const STALENESS_THRESHOLD_HOURS = 48
 
 /**
- * Get Supabase client for price operations
- * Uses service role key for writes (server-side only), anon key for reads
+ * Get Supabase client for price operations (server-side only)
+ * Always uses service role key to bypass RLS — all callers are API routes
+ * that already verify authentication via verifyApiAuth()
  */
-function getSupabaseClient(useServiceRole = false) {
+function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = useServiceRole
-    ? process.env.SUPABASE_SERVICE_ROLE_KEY
-    : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!url || !key) {
     console.warn('Supabase credentials not available for price operations')
@@ -119,7 +119,7 @@ export async function getCardPriceHistory(
 export async function savePriceSnapshot(
   snapshot: Omit<PriceSnapshot, 'id' | 'created_at'>
 ): Promise<boolean> {
-  const supabase = getSupabaseClient(true) // Use service role for insert
+  const supabase = getSupabaseClient()
   if (!supabase) {
     console.error('Service role key required for saving price snapshots')
     return false

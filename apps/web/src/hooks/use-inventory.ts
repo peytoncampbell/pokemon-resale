@@ -5,6 +5,13 @@ import type { GameType } from '@/lib/card-types'
 import { getCurrentOrganizationId } from './use-organization'
 import { getCurrentUserId } from '@/lib/auth-helpers'
 
+// Helper to get auth headers from Supabase session
+async function getAuthHeaders(): Promise<HeadersInit> {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) return {}
+  return { Authorization: `Bearer ${session.access_token}` }
+}
+
 export type { InventoryItem }
 
 export interface AddInventoryData {
@@ -362,7 +369,10 @@ export function useSearchSealed(query: string, gameType: GameType = 'pokemon', e
       params.set('game', gameType)
       if (query) params.set('search', query)
 
-      const response = await fetch(`/api/tcg/sealed?${params}`)
+      const authHeaders = await getAuthHeaders()
+      const response = await fetch(`/api/tcg/sealed?${params}`, {
+        headers: authHeaders,
+      })
       if (!response.ok) {
         throw new Error('Failed to fetch sealed products')
       }
@@ -404,7 +414,10 @@ export function useRecentSealed(gameType: GameType = 'pokemon') {
       params.set('game', gameType)
       params.set('limit', '12')
 
-      const response = await fetch(`/api/tcg/sealed?${params}`)
+      const authHeaders = await getAuthHeaders()
+      const response = await fetch(`/api/tcg/sealed?${params}`, {
+        headers: authHeaders,
+      })
       if (!response.ok) {
         throw new Error('Failed to fetch sealed products')
       }
