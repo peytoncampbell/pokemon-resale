@@ -11,7 +11,8 @@ import { useInventoryItems, useDeleteInventoryItem } from '@/hooks/use-inventory
 import { useInventoryFilters, filterInventory, getUniqueLocations, getFilterCounts } from '@/hooks/use-inventory-filters'
 import { useExportInventory } from '@/hooks/use-export'
 import { useCurrency } from '@/hooks/use-currency'
-import { Grid3X3, List, Plus, Search, MapPin, Trash2 } from 'lucide-react'
+import { useUnrealizedGains } from '@/hooks/use-pnl'
+import { Grid3X3, List, Plus, Search, MapPin, Trash2, DollarSign, Upload } from 'lucide-react'
 import { AddInventoryModal } from '@/components/inventory/add-inventory-modal'
 import { BulkActionBar } from '@/components/inventory/bulk-action-bar'
 import { FilterPanel } from '@/components/inventory/filter-panel'
@@ -22,6 +23,12 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { AnimatedGrid, AnimatedList } from '@/components/ui/animated-list'
 import { HoloCard } from '@/components/ui/holo-card'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { SellModal } from '@/components/inventory/sell-modal'
+import { StatusBadge } from '@/components/inventory/status-badge'
+import { PnLColumn } from '@/components/inventory/pnl-column'
+import { CSVImportWizard } from '@/components/inventory/csv-import-wizard'
+import type { InventoryItem } from '@/lib/supabase'
+import type { InventoryStatus } from '@/lib/pnl/types'
 import Image from 'next/image'
 
 const STATUS_COLORS = {
@@ -34,6 +41,9 @@ const STATUS_COLORS = {
 export default function InventoryPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isSellModalOpen, setIsSellModalOpen] = useState(false)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [selectedItemForSale, setSelectedItemForSale] = useState<InventoryItem | null>(null)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   // Filter state management
@@ -45,6 +55,9 @@ export default function InventoryPage() {
   const deleteItem = useDeleteInventoryItem()
   const { exportInventory, isExporting } = useExportInventory()
   const { formatConverted } = useCurrency()
+
+  // Fetch unrealized gains for P&L column
+  const { data: unrealizedGains } = useUnrealizedGains()
 
   // Apply filters and sorting
   const filteredItems = useMemo(() => {
@@ -98,6 +111,22 @@ export default function InventoryPage() {
     }
   }
 
+  const handleSellClick = (item: InventoryItem) => {
+    setSelectedItemForSale(item)
+    setIsSellModalOpen(true)
+  }
+
+  const handleSellModalClose = () => {
+    setIsSellModalOpen(false)
+    setSelectedItemForSale(null)
+  }
+
+  // Helper to get market price for an item from unrealized gains
+  const getMarketPrice = (itemId: string): number | null => {
+    const gain = unrealizedGains?.find(g => g.inventory_id === itemId)
+    return gain?.current_market_price ?? null
+  }
+
   const handleExport = async (format: 'csv' | 'xlsx') => {
     if (filteredItems) {
       await exportInventory(filteredItems, format)
@@ -120,10 +149,16 @@ export default function InventoryPage() {
           title="Inventory"
           description="Manage your Pokemon card collection"
           actions={
-            <Button onClick={() => setIsAddModalOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Item
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
+                <Upload className="mr-2 h-4 w-4" />
+                Import CSV
+              </Button>
+              <Button onClick={() => setIsAddModalOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Item
+              </Button>
+            </div>
           }
         />
 
@@ -245,30 +280,57 @@ export default function InventoryPage() {
                           <p className="text-sm text-white/60 line-clamp-1">{item.set_name || 'Unknown Set'}</p>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant={STATUS_COLORS[item.status]}>
-                            {item.status.replace('_', ' ')}
-                          </Badge>
+                          <StatusBadge status={item.status as InventoryStatus} size="sm" />
                           <Badge variant="outline">
                             {item.condition || 'NM'}
                           </Badge>
                         </div>
-                        <div className="mt-auto flex items-center justify-between pt-2 border-t border-white/10">
-                          <div>
-                            <p className="text-xs text-white/60 font-medium">Cost</p>
-                            <p className="font-bold text-lg text-vision-cyan">{formatConverted(item.acquisition_cost)}</p>
-                            {item.quantity > 1 && (
-                              <p className="text-xs text-white/60">Qty: {item.quantity}</p>
-                            )}
+                        <div className="mt-auto space-y-2">
+                          <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                            <div>
+                              <p className="text-xs text-white/60 font-medium">Cost</p>
+                              <p className="font-bold text-lg text-vision-cyan">{formatConverted(item.acquisition_cost)}</p>
+                              {item.quantity > 1 && (
+                                <p className="text-xs text-white/60">Qty: {item.quantity}</p>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-xs text-white/60 font-medium">P&L</p>
+                              <PnLColumn
+                                costBasis={item.acquisition_cost * item.quantity}
+                                marketPrice={getMarketPrice(item.id)}
+                                quantity={item.quantity}
+                              />
+                            </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(item.id)}
-                            disabled={deleteItem.isPending}
-                            className="hover:bg-red-500/10 text-red-400 z-20"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex gap-2">
+                            {(item.status === 'IN_STOCK' || item.status === 'LISTED') && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleSellClick(item)
+                                }}
+                                className="flex-1 z-20"
+                              >
+                                <DollarSign className="h-3 w-3 mr-1" />
+                                Sell
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDelete(item.id)
+                              }}
+                              disabled={deleteItem.isPending}
+                              className="hover:bg-red-500/10 text-red-400 z-20"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </div>
@@ -305,30 +367,57 @@ export default function InventoryPage() {
                           <p className="text-xs text-white/60 mt-1">Quantity: {item.quantity}</p>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={STATUS_COLORS[item.status]}>
-                          {item.status.replace('_', ' ')}
-                        </Badge>
-                        <Badge variant="outline">
-                          {item.condition || 'NM'}
-                        </Badge>
-                        <Badge variant="outline" className="gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {item.location}
-                        </Badge>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <StatusBadge status={item.status as InventoryStatus} size="sm" />
+                          <Badge variant="outline">
+                            {item.condition || 'NM'}
+                          </Badge>
+                          <Badge variant="outline" className="gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {item.location}
+                          </Badge>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-white/60 font-medium">Cost</p>
+                          <span className="text-lg font-bold whitespace-nowrap text-vision-cyan">
+                            {formatConverted(item.acquisition_cost)}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-white/60 font-medium">P&L</p>
+                          <PnLColumn
+                            costBasis={item.acquisition_cost * item.quantity}
+                            marketPrice={getMarketPrice(item.id)}
+                            quantity={item.quantity}
+                          />
+                        </div>
+                        {(item.status === 'IN_STOCK' || item.status === 'LISTED') && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleSellClick(item)
+                            }}
+                          >
+                            <DollarSign className="h-3 w-3 mr-1" />
+                            Sell
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDelete(item.id)
+                          }}
+                          disabled={deleteItem.isPending}
+                          className="hover:bg-red-500/10 text-red-400"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <span className="text-lg font-bold whitespace-nowrap text-vision-cyan">
-                        {formatConverted(item.acquisition_cost)}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(item.id)}
-                        disabled={deleteItem.isPending}
-                        className="hover:bg-red-500/10 text-red-400"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -370,6 +459,17 @@ export default function InventoryPage() {
       <AddInventoryModal
         open={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+      />
+
+      <SellModal
+        item={selectedItemForSale}
+        isOpen={isSellModalOpen}
+        onClose={handleSellModalClose}
+      />
+
+      <CSVImportWizard
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
       />
 
       <BulkActionBar
