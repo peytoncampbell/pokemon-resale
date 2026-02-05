@@ -54,8 +54,15 @@ coverage/
 *.tmp
 *.temp
 
+# Playwright
+playwright-report/
+test-results/
+
 # Supabase local files
 supabase/.temp/
 
 # GSD planning files (live in parent repo)
 .planning/
+
+# Windows artifacts
+nul
