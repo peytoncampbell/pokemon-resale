@@ -54,8 +54,9 @@ ORDER BY card_id, recorded_at DESC;
 
 -- Deduplication constraint
 -- Prevents multiple snapshots for the same card/source/condition on the same day
+-- Uses timezone('UTC', recorded_at)::date which is IMMUTABLE (fixed timezone)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_price_snapshots_dedup
-  ON price_snapshots(card_id, source, condition, (recorded_at::date));
+  ON price_snapshots(card_id, source, condition, (timezone('UTC', recorded_at)::date));
 
 -- Row Level Security
 ALTER TABLE price_snapshots ENABLE ROW LEVEL SECURITY;

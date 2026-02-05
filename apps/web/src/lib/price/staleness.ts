@@ -126,26 +126,24 @@ export async function savePriceSnapshot(
   }
 
   try {
-    const { error } = await supabase.from('price_snapshots').upsert(
-      {
-        card_id: snapshot.card_id,
-        card_name: snapshot.card_name,
-        product_type: snapshot.product_type,
-        game_type: snapshot.game_type,
-        market_price: snapshot.market_price,
-        low_price: snapshot.low_price,
-        source: snapshot.source,
-        condition: snapshot.condition,
-        raw_data: snapshot.raw_data,
-        recorded_at: snapshot.recorded_at,
-      },
-      {
-        onConflict: 'card_id,source,condition,recorded_at',
-        ignoreDuplicates: true,
-      }
-    )
+    const { error } = await supabase.from('price_snapshots').insert({
+      card_id: snapshot.card_id,
+      card_name: snapshot.card_name,
+      product_type: snapshot.product_type,
+      game_type: snapshot.game_type,
+      market_price: snapshot.market_price,
+      low_price: snapshot.low_price,
+      source: snapshot.source,
+      condition: snapshot.condition,
+      raw_data: snapshot.raw_data,
+      recorded_at: snapshot.recorded_at,
+    })
 
     if (error) {
+      // Duplicate for same card/source/condition/day is expected — not an error
+      if (error.code === '23505') {
+        return true
+      }
       console.error('Error saving price snapshot:', error)
       return false
     }
