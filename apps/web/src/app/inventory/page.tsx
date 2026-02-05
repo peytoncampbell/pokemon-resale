@@ -24,6 +24,7 @@ import { AnimatedGrid, AnimatedList } from '@/components/ui/animated-list'
 import { HoloCard } from '@/components/ui/holo-card'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { useBatchPriceRefresh } from '@/hooks/use-price-history'
+import { ItemDetailModal } from '@/components/inventory/item-detail-modal'
 import { SellModal } from '@/components/inventory/sell-modal'
 import { StatusBadge } from '@/components/inventory/status-badge'
 import { PnLColumn } from '@/components/inventory/pnl-column'
@@ -45,6 +46,7 @@ export default function InventoryPage() {
   const [isSellModalOpen, setIsSellModalOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [selectedItemForSale, setSelectedItemForSale] = useState<InventoryItem | null>(null)
+  const [selectedItemForDetail, setSelectedItemForDetail] = useState<InventoryItem | null>(null)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   // Filter state management
@@ -270,7 +272,8 @@ export default function InventoryPage() {
             {viewMode === 'grid' ? (
               <AnimatedGrid className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredItems.map((item) => (
-                  <HoloCard key={item.id} type="default" className={`h-full ${selectedIds.includes(item.id) ? 'ring-2 ring-vision-cyan' : ''}`}>
+                  <div key={item.id} onClick={() => setSelectedItemForDetail(item)} className="cursor-pointer">
+                  <HoloCard type="default" className={`h-full ${selectedIds.includes(item.id) ? 'ring-2 ring-vision-cyan' : ''}`}>
                     <div className="relative h-full flex flex-col">
                       <div className="aspect-[3/4] bg-white/5 flex items-center justify-center relative">
                         <div className="absolute top-3 left-3 z-20">
@@ -355,12 +358,13 @@ export default function InventoryPage() {
                       </CardContent>
                     </div>
                   </HoloCard>
+                  </div>
                 ))}
               </AnimatedGrid>
             ) : (
               <AnimatedList className="space-y-3">
                 {filteredItems.map((item) => (
-                  <Card key={item.id} className={`hover:shadow-lg hover:shadow-vision-blue/10 transition-all ${selectedIds.includes(item.id) ? 'ring-2 ring-vision-cyan' : ''}`}>
+                  <Card key={item.id} className={`hover:shadow-lg hover:shadow-vision-blue/10 transition-all cursor-pointer ${selectedIds.includes(item.id) ? 'ring-2 ring-vision-cyan' : ''}`} onClick={() => setSelectedItemForDetail(item)}>
                     <CardContent className="flex items-center gap-4 p-5">
                       <Checkbox
                         checked={selectedIds.includes(item.id)}
@@ -479,6 +483,14 @@ export default function InventoryPage() {
       <AddInventoryModal
         open={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+      />
+
+      <ItemDetailModal
+        item={selectedItemForDetail}
+        isOpen={!!selectedItemForDetail}
+        onClose={() => setSelectedItemForDetail(null)}
+        marketPrice={selectedItemForDetail ? getMarketPrice(selectedItemForDetail.id) : null}
+        onSellClick={handleSellClick}
       />
 
       <SellModal
