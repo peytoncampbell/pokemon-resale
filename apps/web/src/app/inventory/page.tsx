@@ -138,6 +138,7 @@ export default function InventoryPage() {
         cardName: item.card_name,
         gameType: item.game_type as 'pokemon' | 'onepiece',
         setName: item.set_name || undefined,
+        productType: item.product_type,
       }))
     refreshPrices(cards)
   }

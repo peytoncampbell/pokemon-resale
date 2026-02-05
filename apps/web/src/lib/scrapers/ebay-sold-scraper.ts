@@ -8,6 +8,7 @@ import { savePriceSnapshot } from '@/lib/price/staleness'
 import { retryWithBackoff, humanDelay } from './scraper-utils'
 
 export interface EbaySoldPriceOptions {
+  cardId?: string
   cardName: string
   gameType: GameType
   setName?: string
@@ -179,13 +180,12 @@ export async function scrapeEbaySoldPrice(
       // Lowest non-outlier sale as low price
       const lowPrice = Math.min(...prices)
 
-      // Construct card_id (eBay has no stable product ID)
-      const normalizedName = cardName.toLowerCase().replace(/\s+/g, '-')
-      const cardId = `ebay-${gameType}-${normalizedName}`
+      // Use caller's cardId if provided (matches inventory), fall back to constructed ID
+      const snapshotCardId = options.cardId || `ebay-${gameType}-${cardName.toLowerCase().replace(/\s+/g, '-')}`
 
       // Save price snapshot
       const savedSuccessfully = await savePriceSnapshot({
-        card_id: cardId,
+        card_id: snapshotCardId,
         card_name: cardName,
         product_type: 'card',
         game_type: gameType,
@@ -206,7 +206,7 @@ export async function scrapeEbaySoldPrice(
       }
 
       return {
-        card_id: cardId,
+        card_id: snapshotCardId,
         market_price: marketPrice,
         low_price: lowPrice,
         source: 'ebay' as const,

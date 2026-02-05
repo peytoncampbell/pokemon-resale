@@ -7,6 +7,7 @@ import { savePriceSnapshot } from '@/lib/price/staleness'
 import { retryWithBackoff } from './scraper-utils'
 
 export interface TCGPlayerPriceOptions {
+  cardId?: string
   cardName: string
   gameType: GameType
   setName?: string
@@ -52,7 +53,7 @@ function findBestMatch(cards: any[], cardName: string): any | null {
 export async function scrapeTCGPlayerPrice(
   options: TCGPlayerPriceOptions
 ): Promise<TCGPlayerPriceResult> {
-  const { cardName, gameType, setName, productType = 'card' } = options
+  const { cardId, cardName, gameType, setName, productType = 'card' } = options
 
   // Use retry logic for resilience
   const result = await retryWithBackoff(
@@ -76,9 +77,12 @@ export async function scrapeTCGPlayerPrice(
       const marketPrice = bestMatch.marketPrice
       const lowPrice = bestMatch.lowPrice
 
+      // Use caller's cardId if provided (matches inventory), fall back to TCGPlayer's productId
+      const snapshotCardId = cardId || bestMatch.productId
+
       // Save price snapshot
       const savedSuccessfully = await savePriceSnapshot({
-        card_id: bestMatch.productId,
+        card_id: snapshotCardId,
         card_name: bestMatch.name,
         product_type: productType,
         game_type: gameType,
@@ -103,7 +107,7 @@ export async function scrapeTCGPlayerPrice(
       }
 
       return {
-        card_id: bestMatch.productId,
+        card_id: snapshotCardId,
         market_price: marketPrice,
         low_price: lowPrice,
         source: 'tcgplayer' as const,

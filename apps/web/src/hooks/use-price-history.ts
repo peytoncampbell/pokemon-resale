@@ -186,7 +186,7 @@ export function useBatchPriceRefresh() {
   const queryClient = useQueryClient()
 
   const mutation = useMutation({
-    mutationFn: async (cards: { cardId: string; cardName: string; gameType: GameType; setName?: string }[]) => {
+    mutationFn: async (cards: { cardId: string; cardName: string; gameType: GameType; setName?: string; productType?: string }[]) => {
       if (cards.length === 0) return { data: { succeeded: 0, failed: 0, results: [] } }
 
       const authHeaders = await getAuthHeaders()

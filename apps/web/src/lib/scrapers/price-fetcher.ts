@@ -50,6 +50,7 @@ export async function fetchPriceWithFallback(
   try {
     console.log(`Attempting TCGPlayer scrape for: ${cardName}`)
     const tcgResult = await scrapeTCGPlayerPrice({
+      cardId,
       cardName,
       gameType,
       setName,
@@ -67,6 +68,7 @@ export async function fetchPriceWithFallback(
     try {
       console.log(`Attempting eBay fallback for: ${cardName}`)
       const ebayResult = await scrapeEbaySoldPrice({
+        cardId,
         cardName,
         gameType,
         setName,
@@ -99,6 +101,7 @@ export async function fetchBatchPrices(
     cardName: string
     gameType: GameType
     setName?: string
+    productType?: 'card' | 'sealed'
   }>,
   options?: BatchPriceOptions
 ): Promise<BatchPriceResult> {
@@ -149,6 +152,7 @@ export async function fetchBatchPrices(
           cardName: card.cardName,
           gameType: card.gameType,
           setName: card.setName,
+          productType: card.productType,
         })
       )
     )
