@@ -1,8 +1,10 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Condition } from '@/types/filters'
 import type { PriceHistoryData } from '@/types/price-intelligence'
+import type { FreshnessStatus } from '@/lib/price/types'
+import type { GameType } from '@/lib/tcg/types'
 
-// JustTCG API variant response
+// JustTCG API variant response (for legacy usePriceComparison and useArbitrageOpportunities)
 interface JustTCGVariant {
   id: string
   condition: string
@@ -35,6 +37,29 @@ const conditionMap: Record<Condition, string> = {
 
 export type PriceHistoryDuration = '7d' | '30d' | '90d' | '180d'
 
+// Extended return type with freshness data
+interface PriceHistoryDataWithFreshness extends PriceHistoryData {
+  freshness?: FreshnessStatus
+  hoursOld?: number
+  recordedAt?: string
+}
+
+// Map duration to days
+function durationToDays(duration: PriceHistoryDuration): number {
+  switch (duration) {
+    case '7d':
+      return 7
+    case '30d':
+      return 30
+    case '90d':
+      return 90
+    case '180d':
+      return 180
+    default:
+      return 30
+  }
+}
+
 export function usePriceHistory(
   cardId: string | undefined,
   condition: Condition = 'NM',
@@ -42,51 +67,106 @@ export function usePriceHistory(
 ) {
   return useQuery({
     queryKey: ['price-history', cardId, condition, duration],
-    queryFn: async (): Promise<PriceHistoryData | null> => {
+    queryFn: async (): Promise<PriceHistoryDataWithFreshness | null> => {
       if (!cardId) return null
 
+      const days = durationToDays(duration)
       const response = await fetch(
-        `/api/justtcg?cardId=${encodeURIComponent(cardId)}&include_price_history=true&priceHistoryDuration=${duration}`
+        `/api/prices/history?cardId=${encodeURIComponent(cardId)}&days=${days}`
       )
 
       if (!response.ok) {
         throw new Error('Failed to fetch price history')
       }
 
-      const data = await response.json()
-      const card = data.data?.[0] as JustTCGCard | undefined
+      const result = await response.json()
+      const data = result.data
 
-      if (!card) return null
+      if (!data) return null
 
-      const variant = card.variants?.find((v) => v.condition === conditionMap[condition])
+      // Map API response to PriceHistoryData format
+      const history = data.history.map((point: any) => ({
+        date: point.recorded_at,
+        price: point.market_price,
+      }))
 
-      if (!variant) {
-        // Return empty data if no variant found for condition
-        return {
-          currentPrice: null,
-          priceChange7d: null,
-          priceChange30d: null,
-          avgPrice: null,
-          minPrice: null,
-          maxPrice: null,
-          history: [],
-        }
+      // Calculate price changes from history
+      const calculatePriceChange = (daysAgo: number) => {
+        if (!data.current || history.length === 0) return null
+
+        const targetDate = new Date()
+        targetDate.setDate(targetDate.getDate() - daysAgo)
+
+        // Find the closest price point to the target date
+        const historicalPoint = history.reduce((closest: any, point: any) => {
+          const pointDate = new Date(point.date)
+          const closestDate = new Date(closest?.date || 0)
+          const pointDiff = Math.abs(pointDate.getTime() - targetDate.getTime())
+          const closestDiff = Math.abs(closestDate.getTime() - targetDate.getTime())
+          return pointDiff < closestDiff ? point : closest
+        }, null)
+
+        if (!historicalPoint || !data.current.market_price) return null
+
+        return data.current.market_price - historicalPoint.price
       }
 
       return {
-        currentPrice: variant.price,
-        priceChange7d: variant.priceChange7d,
-        priceChange30d: variant.priceChange30d,
-        avgPrice: variant.avgPrice,
-        minPrice: variant.minPrice,
-        maxPrice: variant.maxPrice,
-        history: variant.priceHistory ?? [],
+        currentPrice: data.current?.market_price ?? null,
+        priceChange7d: calculatePriceChange(7),
+        priceChange30d: calculatePriceChange(30),
+        avgPrice: data.stats?.avg ?? null,
+        minPrice: data.stats?.min ?? null,
+        maxPrice: data.stats?.max ?? null,
+        history,
+        freshness: data.current?.freshness,
+        hoursOld: data.current?.hours_old,
+        recordedAt: data.current?.recorded_at,
       }
     },
     enabled: !!cardId,
     staleTime: 15 * 60 * 1000, // 15 minutes
     gcTime: 60 * 60 * 1000, // 1 hour
   })
+}
+
+// Hook to trigger on-demand price refresh
+export function usePriceRefresh() {
+  const queryClient = useQueryClient()
+
+  const mutation = useMutation({
+    mutationFn: async (params: { cardId: string; cardName: string; gameType: GameType }) => {
+      const response = await fetch('/api/prices/scrape', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cardId: params.cardId,
+          cardName: params.cardName,
+          gameType: params.gameType,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to refresh price')
+      }
+
+      return response.json()
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate price history query to refetch fresh data
+      queryClient.invalidateQueries({
+        queryKey: ['price-history', variables.cardId],
+      })
+    },
+  })
+
+  return {
+    refreshPrice: mutation.mutate,
+    isRefreshing: mutation.isPending,
+  }
 }
 
 // Hook to get price comparison across all conditions

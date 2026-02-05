@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { usePriceHistory, type PriceHistoryDuration } from '@/hooks/use-price-history'
+import { usePriceHistory, usePriceRefresh, type PriceHistoryDuration } from '@/hooks/use-price-history'
 import { useCurrency } from '@/hooks/use-currency'
 import { cn } from '@/lib/utils'
 import { TrendingUp, TrendingDown, Minus, LineChart as LineChartIcon } from 'lucide-react'
@@ -17,13 +17,17 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   ReferenceDot,
+  Legend,
 } from 'recharts'
 import type { Condition } from '@/types/filters'
+import type { GameType } from '@/lib/tcg/types'
+import { StalenessBadge } from './staleness-badge'
 
 interface PriceHistoryChartProps {
   cardId: string
   cardName: string
   condition?: Condition
+  gameType?: GameType
   userBuyPrice?: number
   userBuyDate?: Date
   userSellPrice?: number
@@ -42,6 +46,7 @@ export function PriceHistoryChart({
   cardId,
   cardName,
   condition = 'NM',
+  gameType = 'pokemon',
   userBuyPrice,
   userBuyDate,
   userSellPrice,
@@ -52,6 +57,12 @@ export function PriceHistoryChart({
   const [duration, setDuration] = useState<PriceHistoryDuration>('30d')
   const { data, isLoading, error } = usePriceHistory(cardId, condition, duration)
   const { formatPrice } = useCurrency()
+  const { refreshPrice, isRefreshing } = usePriceRefresh()
+
+  // Create a wrapper callback for StalenessBadge
+  const handleRefresh = () => {
+    refreshPrice({ cardId, cardName, gameType })
+  }
 
   if (isLoading) {
     return <PriceHistoryChartSkeleton className={className} height={height} />
@@ -89,12 +100,17 @@ export function PriceHistoryChart({
     )
   }
 
-  // Format chart data
-  const chartData = data.history.map((point) => ({
-    date: new Date(point.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    price: point.price,
-    fullDate: point.date,
+  // Format chart data - handle both old format (date/price) and new format (recorded_at/market_price/source)
+  const chartData = data.history.map((point: any) => ({
+    date: new Date(point.date || point.recorded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    price: point.price ?? point.market_price,
+    source: point.source,
+    fullDate: point.date || point.recorded_at,
   }))
+
+  // Check if we have mixed sources for legend display
+  const sources = [...new Set(chartData.map((d) => d.source).filter(Boolean))]
+  const hasMixedSources = sources.length > 1
 
   // Calculate trend
   const priceChange = data.priceChange30d ?? data.priceChange7d ?? 0
@@ -119,7 +135,17 @@ export function PriceHistoryChart({
               {cardName} ({condition})
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {/* Staleness badge */}
+            {data.freshness && (
+              <StalenessBadge
+                freshness={data.freshness}
+                hoursOld={data.hoursOld}
+                recordedAt={data.recordedAt}
+                onRefresh={handleRefresh}
+                isRefreshing={isRefreshing}
+              />
+            )}
             {/* Duration selector */}
             <div className="flex rounded-lg bg-white/5 p-0.5">
               {DURATION_OPTIONS.map((option) => (
@@ -210,8 +236,36 @@ export function PriceHistoryChart({
                   color: '#fff',
                 }}
                 labelStyle={{ color: 'rgba(255,255,255,0.6)' }}
-                formatter={(value) => [formatPrice(value as number), 'Price']}
+                formatter={(value, name, props) => {
+                  const source = props.payload.source
+                  const sourceLabel = source === 'tcgplayer' ? 'TCGPlayer' : source === 'ebay' ? 'eBay' : ''
+                  return [
+                    `${formatPrice(value as number)}${sourceLabel ? ` (${sourceLabel})` : ''}`,
+                    'Price'
+                  ]
+                }}
               />
+              {/* Source legend for mixed sources */}
+              {hasMixedSources && (
+                <Legend
+                  content={() => (
+                    <div className="flex justify-center gap-4 mt-2 text-xs">
+                      {sources.includes('tcgplayer') && (
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded-full bg-[#0075FF]" />
+                          <span className="text-white/60">TCGPlayer</span>
+                        </div>
+                      )}
+                      {sources.includes('ebay') && (
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded-full bg-orange-400" />
+                          <span className="text-white/60">eBay</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                />
+              )}
               {/* User buy price reference line */}
               {userBuyPrice && (
                 <ReferenceLine
