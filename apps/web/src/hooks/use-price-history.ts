@@ -3,6 +3,14 @@ import type { Condition } from '@/types/filters'
 import type { PriceHistoryData } from '@/types/price-intelligence'
 import type { FreshnessStatus } from '@/lib/price/types'
 import type { GameType } from '@/lib/tcg/types'
+import { supabase } from '@/lib/supabase'
+
+// Helper to get auth headers from Supabase session
+async function getAuthHeaders(): Promise<HeadersInit> {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) return {}
+  return { Authorization: `Bearer ${session.access_token}` }
+}
 
 // JustTCG API variant response (for legacy usePriceComparison and useArbitrageOpportunities)
 interface JustTCGVariant {
@@ -71,8 +79,10 @@ export function usePriceHistory(
       if (!cardId) return null
 
       const days = durationToDays(duration)
+      const authHeaders = await getAuthHeaders()
       const response = await fetch(
-        `/api/prices/history?cardId=${encodeURIComponent(cardId)}&days=${days}`
+        `/api/prices/history?cardId=${encodeURIComponent(cardId)}&days=${days}`,
+        { headers: authHeaders }
       )
 
       if (!response.ok) {
@@ -136,10 +146,12 @@ export function usePriceRefresh() {
 
   const mutation = useMutation({
     mutationFn: async (params: { cardId: string; cardName: string; gameType: GameType }) => {
+      const authHeaders = await getAuthHeaders()
       const response = await fetch('/api/prices/scrape', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...authHeaders,
         },
         body: JSON.stringify({
           cardId: params.cardId,
