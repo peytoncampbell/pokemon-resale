@@ -30,11 +30,6 @@ CREATE INDEX IF NOT EXISTS idx_price_snapshots_game_time
 CREATE INDEX IF NOT EXISTS idx_price_snapshots_source
   ON price_snapshots(source);
 
--- Staleness check: fast lookup for recent prices (last 7 days)
-CREATE INDEX IF NOT EXISTS idx_price_snapshots_stale
-  ON price_snapshots(card_id, recorded_at DESC)
-  WHERE recorded_at > NOW() - INTERVAL '7 days';
-
 -- Latest prices view
 -- Returns most recent price snapshot for each card with freshness status
 CREATE VIEW latest_prices AS
