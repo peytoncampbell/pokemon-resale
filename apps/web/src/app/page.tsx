@@ -2,10 +2,11 @@
 
 import { MainLayout } from '@/components/layout/main-layout'
 import { PageHeader } from '@/components/layout/page-header'
-import { DashboardMetrics } from '@/components/dashboard/dashboard-metrics'
+import { PortfolioMetrics } from '@/components/dashboard/portfolio-metrics'
+import { DealRanking } from '@/components/dashboard/deal-ranking'
+import { ActivityFeedCard } from '@/components/dashboard/activity-feed'
 import { InventoryStatusCard } from '@/components/dashboard/inventory-status-card'
 import { SalesChartWrapper } from '@/components/dashboard/sales-chart-wrapper'
-import { RecentActivityCard } from '@/components/dashboard/recent-activity-card'
 import { RecentInventoryCard } from '@/components/dashboard/recent-inventory-card'
 import {
   ProfitBySetWidget,
@@ -26,12 +27,12 @@ export default function DashboardPage() {
         {/* Page Header */}
         <PageHeader
           title="Dashboard"
-          description="Track your Pokemon card inventory and monitor your sales."
+          description="Portfolio performance, P&L tracking, and deal analytics."
         />
 
         {/* Metric Cards Row */}
         <ErrorBoundary fallback={<div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">Failed to load dashboard metrics</div>}>
-          <DashboardMetrics />
+          <PortfolioMetrics />
         </ErrorBoundary>
 
         {/* Two Column Layout: Chart + Status */}
@@ -59,9 +60,14 @@ export default function DashboardPage() {
           </div>
         </ErrorBoundary>
 
+        {/* Deal Performance */}
+        <ErrorBoundary fallback={<div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">Failed to load deal rankings</div>}>
+          <DealRanking />
+        </ErrorBoundary>
+
         {/* Recent Activity */}
         <ErrorBoundary fallback={<div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">Failed to load recent activity</div>}>
-          <RecentActivityCard />
+          <ActivityFeedCard />
         </ErrorBoundary>
 
         {/* Recent Inventory */}
