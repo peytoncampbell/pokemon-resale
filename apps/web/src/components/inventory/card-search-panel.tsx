@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge'
 import { Search, CreditCard, Package } from 'lucide-react'
 import { useSearchCards, useRecentCards, useSearchSealed, useRecentSealed } from '@/hooks/use-inventory'
 import type { GameType, UnifiedCard } from '@/lib/card-types'
-import { formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
 import { useCurrency } from '@/hooks/use-currency'
 
@@ -31,7 +30,7 @@ export function CardSearchPanel({ onCardSelect }: CardSearchPanelProps) {
   const [searchEnabled, setSearchEnabled] = useState(false)
   const [gameType, setGameType] = useState<GameType>('pokemon')
   const [productTab, setProductTab] = useState<ProductTab>('cards')
-  const { currency } = useCurrency()
+  const { formatConverted } = useCurrency()
 
   // Cards queries
   const { data: recentCards, isLoading: isLoadingRecentCards } = useRecentCards(gameType)
@@ -227,7 +226,7 @@ export function CardSearchPanel({ onCardSelect }: CardSearchPanelProps) {
                 <div className="text-right">
                   {card.marketPrice ? (
                     <span className="text-sm font-bold text-vision-cyan">
-                      {formatCurrency(card.marketPrice, currency)}
+                      {formatConverted(card.marketPrice)}
                     </span>
                   ) : (
                     <span className="text-xs text-muted-foreground">—</span>

@@ -10,8 +10,7 @@ export interface UnifiedCard {
   imageSmall: string
   imageLarge?: string
   rarity?: string
-  marketPrice: number | null       // Price in CAD (converted from USD)
-  marketPriceUsd?: number | null   // Original USD price from JustTCG
+  marketPrice: number | null       // Price in USD from TCGPlayer (converted at display via CurrencyProvider)
 }
 
 export interface UnifiedSearchResponse {

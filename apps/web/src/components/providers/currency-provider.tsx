@@ -26,8 +26,8 @@ export const CURRENCY_SYMBOLS: Record<Currency, string> = {
   EUR: '€',
 }
 
-// Base currency that data is stored in
-const BASE_CURRENCY: Currency = 'CAD'
+// Base currency that data is stored in (TCGPlayer prices are USD)
+const BASE_CURRENCY: Currency = 'USD'
 
 // Exchange rates relative to USD (for display purposes)
 // In production, these would be fetched from an API

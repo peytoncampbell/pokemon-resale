@@ -1,13 +1,7 @@
 import type { GameType, ProductType, UnifiedCard, UnifiedSearchResponse } from './card-types'
 
-// TCGPlayer prices are in USD — convert to CAD
-// TODO: Replace with live exchange rate API
-const USD_TO_CAD = 1.44
-
-function convertUsdToCad(usdPrice: number | null): number | null {
-  if (usdPrice === null) return null
-  return Math.round(usdPrice * USD_TO_CAD * 100) / 100
-}
+// TCGPlayer prices are in USD — stored as-is
+// Currency conversion handled by CurrencyProvider at display time
 
 // Use the TCGPlayer scraper API (Playwright-based)
 const SCRAPER_API = '/api/tcg/scrape'
@@ -61,8 +55,7 @@ function fromScrapedCard(card: ScrapedCard, gameType: GameType, productType: Pro
     setName: card.setName,
     imageSmall: card.imageUrl || '/card-placeholder.png',
     rarity: card.rarity || undefined,
-    marketPrice: convertUsdToCad(card.marketPrice),
-    marketPriceUsd: card.marketPrice,
+    marketPrice: card.marketPrice,  // USD from TCGPlayer — converted at display time
   }
 }
 

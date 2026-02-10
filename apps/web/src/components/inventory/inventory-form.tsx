@@ -6,7 +6,6 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { UnifiedCard } from '@/lib/card-types'
-import { formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
 import { useCurrency } from '@/hooks/use-currency'
 
@@ -35,7 +34,7 @@ interface InventoryFormProps {
 }
 
 export function InventoryForm({ selectedCard, onSubmit, onBack, isSubmitting }: InventoryFormProps) {
-  const { currency } = useCurrency()
+  const { currency, convertFromBase, formatConverted } = useCurrency()
 
   const {
     register,
@@ -47,7 +46,7 @@ export function InventoryForm({ selectedCard, onSubmit, onBack, isSubmitting }: 
       location: LOCATIONS[0],
       condition: 'NM',
       quantity: 1,
-      acquisitionCost: selectedCard.marketPrice || 0,
+      acquisitionCost: selectedCard.marketPrice ? convertFromBase(selectedCard.marketPrice) : 0,
     },
   })
 
@@ -73,16 +72,9 @@ export function InventoryForm({ selectedCard, onSubmit, onBack, isSubmitting }: 
           </div>
           <p className="text-sm text-muted-foreground mb-3">{selectedCard.setName}</p>
           {selectedCard.marketPrice && (
-            <div className="flex flex-wrap gap-2 mb-3">
-              <Badge variant="info" className="rounded-lg">
-                Market: {formatCurrency(selectedCard.marketPrice, 'CAD')}
-              </Badge>
-              {selectedCard.marketPriceUsd && (
-                <Badge variant="outline" className="rounded-lg text-muted-foreground">
-                  ({formatCurrency(selectedCard.marketPriceUsd, 'USD')})
-                </Badge>
-              )}
-            </div>
+            <Badge variant="info" className="mb-3 rounded-lg">
+              Market: {formatConverted(selectedCard.marketPrice)}
+            </Badge>
           )}
           <Button
             type="button"
@@ -158,7 +150,7 @@ export function InventoryForm({ selectedCard, onSubmit, onBack, isSubmitting }: 
       {/* Acquisition Cost */}
       <div className="space-y-2">
         <label className="text-sm font-semibold">
-          Acquisition Cost (CAD) <span className="text-destructive">*</span>
+          Acquisition Cost ({currency}) <span className="text-destructive">*</span>
         </label>
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">
