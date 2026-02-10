@@ -10,7 +10,6 @@ import { X, Search, Plus, Minus, Trash2, Check, ArrowDown, ArrowUp } from 'lucid
 import { useInventoryItems, InventoryItem, useSearchCards, useRecentCards } from '@/hooks/use-inventory'
 import { useCreateTransaction, TransactionItemData } from '@/hooks/use-transactions'
 import type { GameType, UnifiedCard } from '@/lib/card-types'
-import { formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
 import { useCurrency } from '@/hooks/use-currency'
 
@@ -70,7 +69,7 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
   const { data: recentCards, isLoading: isLoadingRecent } = useRecentCards(gameType)
   const { data: searchResults, isLoading: isSearching } = useSearchCards(searchQuery, gameType)
   const createTransaction = useCreateTransaction()
-  const { currency } = useCurrency()
+  const { formatConverted } = useCurrency()
 
   const filteredInventory = inventoryItems?.filter((item) =>
     inventorySearchQuery ? item.card_name.toLowerCase().includes(inventorySearchQuery.toLowerCase()) : true
@@ -332,7 +331,7 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
                         <div className="flex items-center justify-between">
                           <Badge variant="outline">{item.condition}</Badge>
                           <p className="text-sm font-bold text-white/60">
-                            {formatCurrency(item.acquisition_cost, currency)}
+                            {formatConverted(item.acquisition_cost)}
                           </p>
                         </div>
                       </button>
@@ -349,7 +348,7 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
                         {outItems.length} item{outItems.length !== 1 ? 's' : ''} to give
                       </p>
                       <p className="text-lg font-bold text-red-400">
-                        Value: {formatCurrency(totalOutValue, currency)}
+                        Value: {formatConverted(totalOutValue)}
                       </p>
                     </div>
                     <Button onClick={() => setStep('receive')} className="bg-vision-purple hover:bg-vision-purple/80">
@@ -434,7 +433,7 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
                         <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{card.setName}</p>
                         {card.marketPrice && (
                           <p className="text-sm font-bold text-green-400">
-                            {formatCurrency(card.marketPrice, currency)}
+                            {formatConverted(card.marketPrice)}
                           </p>
                         )}
                       </button>
@@ -449,11 +448,11 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
                     <div className="flex gap-4">
                       <div>
                         <p className="text-xs text-white/40">Giving</p>
-                        <p className="text-sm font-bold text-red-400">{formatCurrency(totalOutValue, currency)}</p>
+                        <p className="text-sm font-bold text-red-400">{formatConverted(totalOutValue)}</p>
                       </div>
                       <div>
                         <p className="text-xs text-white/40">Receiving</p>
-                        <p className="text-sm font-bold text-green-400">{formatCurrency(totalInValue, currency)}</p>
+                        <p className="text-sm font-bold text-green-400">{formatConverted(totalInValue)}</p>
                       </div>
                     </div>
                   </div>
@@ -484,7 +483,7 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
                       {outItems.map((oi) => (
                         <div key={oi.item.id} className="flex items-center gap-2 p-2 rounded-lg bg-white/5 text-sm">
                           <span className="truncate flex-1">{oi.item.card_name}</span>
-                          <span className="text-white/60">{formatCurrency(oi.trade_value, currency)}</span>
+                          <span className="text-white/60">{formatConverted(oi.trade_value)}</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -622,29 +621,29 @@ export function TradeTransactionModal({ open, onClose }: TradeTransactionModalPr
               <div className="p-4 rounded-xl bg-white/5">
                 <div className="flex justify-between text-sm text-white/60 mb-1">
                   <span>Items Given Value:</span>
-                  <span className="text-red-400">-{formatCurrency(totalOutValue, currency)}</span>
+                  <span className="text-red-400">-{formatConverted(totalOutValue)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-white/60 mb-1">
                   <span>Items Received Value:</span>
-                  <span className="text-green-400">+{formatCurrency(totalInValue, currency)}</span>
+                  <span className="text-green-400">+{formatConverted(totalInValue)}</span>
                 </div>
                 {cashOut > 0 && (
                   <div className="flex justify-between text-sm text-white/60 mb-1">
                     <span>Cash Paid:</span>
-                    <span className="text-red-400">-{formatCurrency(cashOut, currency)}</span>
+                    <span className="text-red-400">-{formatConverted(cashOut)}</span>
                   </div>
                 )}
                 {cashIn > 0 && (
                   <div className="flex justify-between text-sm text-white/60 mb-1">
                     <span>Cash Received:</span>
-                    <span className="text-green-400">+{formatCurrency(cashIn, currency)}</span>
+                    <span className="text-green-400">+{formatConverted(cashIn)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-white/10 mt-2">
                   <span>Net Value:</span>
                   <span className={(totalInValue + cashIn - totalOutValue - cashOut) >= 0 ? 'text-green-400' : 'text-red-400'}>
                     {(totalInValue + cashIn - totalOutValue - cashOut) >= 0 ? '+' : ''}
-                    {formatCurrency(totalInValue + cashIn - totalOutValue - cashOut, currency)}
+                    {formatConverted(totalInValue + cashIn - totalOutValue - cashOut)}
                   </span>
                 </div>
               </div>

@@ -10,7 +10,6 @@ import { X, Search, Plus, Minus, Trash2 } from 'lucide-react'
 import { useSearchCards, useRecentCards } from '@/hooks/use-inventory'
 import { useCreateTransaction, TransactionItemData } from '@/hooks/use-transactions'
 import type { GameType, UnifiedCard } from '@/lib/card-types'
-import { formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
 import { useCurrency } from '@/hooks/use-currency'
 
@@ -60,7 +59,7 @@ export function BuyTransactionModal({ open, onClose }: BuyTransactionModalProps)
   const { data: recentCards, isLoading: isLoadingRecent } = useRecentCards(gameType)
   const { data: searchResults, isLoading: isSearching } = useSearchCards(searchQuery, gameType)
   const createTransaction = useCreateTransaction()
-  const { currency } = useCurrency()
+  const { formatConverted } = useCurrency()
 
   const displayCards = searchQuery.length > 2 ? searchResults : recentCards
   const isLoading = searchQuery.length > 2 ? isSearching : isLoadingRecent
@@ -245,7 +244,7 @@ export function BuyTransactionModal({ open, onClose }: BuyTransactionModalProps)
                         <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{card.setName}</p>
                         {card.marketPrice && (
                           <p className="text-sm font-bold text-vision-cyan">
-                            {formatCurrency(card.marketPrice, currency)}
+                            {formatConverted(card.marketPrice)}
                           </p>
                         )}
                       </button>
@@ -262,7 +261,7 @@ export function BuyTransactionModal({ open, onClose }: BuyTransactionModalProps)
                         {selectedItems.length} card{selectedItems.length !== 1 ? 's' : ''} selected
                       </p>
                       <p className="text-lg font-bold text-vision-cyan">
-                        Total: {formatCurrency(totalCost, currency)}
+                        Total: {formatConverted(totalCost)}
                       </p>
                     </div>
                     <Button onClick={() => setStep('details')}>
@@ -357,7 +356,7 @@ export function BuyTransactionModal({ open, onClose }: BuyTransactionModalProps)
                 </div>
                 <div className="flex justify-end mt-3">
                   <p className="text-lg font-bold text-vision-cyan">
-                    Total: {formatCurrency(totalCost, currency)}
+                    Total: {formatConverted(totalCost)}
                   </p>
                 </div>
               </div>

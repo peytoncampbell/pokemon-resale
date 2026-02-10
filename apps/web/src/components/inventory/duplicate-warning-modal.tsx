@@ -3,7 +3,6 @@
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, MapPin, X } from 'lucide-react'
-import { formatCurrency } from '@/lib/utils'
 import type { InventoryItem } from '@/lib/supabase'
 import Image from 'next/image'
 import { useCurrency } from '@/hooks/use-currency'
@@ -23,7 +22,7 @@ export function DuplicateWarningModal({
   duplicates,
   cardName,
 }: DuplicateWarningModalProps) {
-  const { currency } = useCurrency()
+  const { formatConverted } = useCurrency()
 
   if (!open) return null
 
@@ -91,7 +90,7 @@ export function DuplicateWarningModal({
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-vision-cyan">{formatCurrency(item.acquisition_cost, currency)}</p>
+                  <p className="font-semibold text-vision-cyan">{formatConverted(item.acquisition_cost)}</p>
                   <p className="text-xs text-white/60">{item.status.replace('_', ' ')}</p>
                 </div>
               </div>

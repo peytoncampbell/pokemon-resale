@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge'
 import { X, Search, Trash2, Check } from 'lucide-react'
 import { useInventoryItems, InventoryItem } from '@/hooks/use-inventory'
 import { useCreateTransaction, TransactionItemData } from '@/hooks/use-transactions'
-import { formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
 import { useCurrency } from '@/hooks/use-currency'
 
@@ -61,7 +60,7 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
   const { data: paginatedData, isLoading } = useInventoryItems('IN_STOCK')
   const inventoryItems = paginatedData?.items
   const createTransaction = useCreateTransaction()
-  const { currency } = useCurrency()
+  const { formatConverted } = useCurrency()
 
   const filteredItems = inventoryItems?.filter((item) =>
     searchQuery ? item.card_name.toLowerCase().includes(searchQuery.toLowerCase()) : true
@@ -264,7 +263,7 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
                         <div className="flex items-center justify-between">
                           <Badge variant="outline">{item.condition}</Badge>
                           <p className="text-sm font-bold text-green-400">
-                            {formatCurrency(item.acquisition_cost, currency)}
+                            {formatConverted(item.acquisition_cost)}
                           </p>
                         </div>
                         {item.quantity > 1 && (
@@ -292,7 +291,7 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
                         {selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} selected
                       </p>
                       <p className="text-lg font-bold text-white/60">
-                        Cost: {formatCurrency(totalAcquisitionCost, currency)}
+                        Cost: {formatConverted(totalAcquisitionCost)}
                       </p>
                     </div>
                     <Button onClick={handleContinue} className="bg-green-500 hover:bg-green-600">
@@ -327,7 +326,7 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-white truncate">{si.item.card_name}</p>
                         <p className="text-sm text-white/60">
-                          {si.item.condition} | Qty: {si.item.quantity} | Cost: {formatCurrency(si.item.acquisition_cost, currency)}
+                          {si.item.condition} | Qty: {si.item.quantity} | Cost: {formatConverted(si.item.acquisition_cost)}
                         </p>
                       </div>
                       <Button
@@ -472,28 +471,28 @@ export function SellTransactionModal({ open, onClose }: SellTransactionModalProp
               <div className="p-4 rounded-xl bg-white/5">
                 <div className="flex justify-between text-sm text-white/60 mb-1">
                   <span>Acquisition Cost:</span>
-                  <span>{formatCurrency(totalAcquisitionCost, currency)}</span>
+                  <span>{formatConverted(totalAcquisitionCost)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-white/60 mb-1">
                   <span>Sale Price:</span>
-                  <span>{formatCurrency(salePrice, currency)}</span>
+                  <span>{formatConverted(salePrice)}</span>
                 </div>
                 {fees > 0 && (
                   <div className="flex justify-between text-sm text-white/60 mb-1">
                     <span>Fees:</span>
-                    <span>-{formatCurrency(fees, currency)}</span>
+                    <span>-{formatConverted(fees)}</span>
                   </div>
                 )}
                 {shippingCost > 0 && (
                   <div className="flex justify-between text-sm text-white/60 mb-1">
                     <span>Shipping:</span>
-                    <span>-{formatCurrency(shippingCost, currency)}</span>
+                    <span>-{formatConverted(shippingCost)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-white/10 mt-2">
                   <span>Net Profit:</span>
                   <span className={netProfit >= 0 ? 'text-green-400' : 'text-red-400'}>
-                    {netProfit >= 0 ? '+' : ''}{formatCurrency(netProfit, currency)}
+                    {netProfit >= 0 ? '+' : ''}{formatConverted(netProfit)}
                   </span>
                 </div>
               </div>

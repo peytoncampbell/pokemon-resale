@@ -6,8 +6,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Default locale for server-side rendering
-const DEFAULT_LOCALE = 'en-CA'
-const DEFAULT_CURRENCY = 'CAD'
+const DEFAULT_LOCALE = 'en-US'
+const DEFAULT_CURRENCY = 'USD'
 
 /**
  * Format a currency value with proper locale formatting
