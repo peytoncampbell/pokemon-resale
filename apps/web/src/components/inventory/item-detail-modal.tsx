@@ -1,11 +1,13 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { X, DollarSign, MapPin, Calendar, Tag, Package, TrendingUp, TrendingDown } from 'lucide-react'
+import { X, DollarSign, MapPin, Calendar, Tag, Package, TrendingUp, TrendingDown, Pencil, Check } from 'lucide-react'
 import { StatusBadge } from '@/components/inventory/status-badge'
 import { Badge } from '@/components/ui/badge'
 import { usePriceHistory } from '@/hooks/use-price-history'
 import { usePriceRefresh } from '@/hooks/use-price-history'
+import { useUpdateInventoryItem } from '@/hooks/use-inventory'
 import { useCurrency } from '@/hooks/use-currency'
 import type { InventoryItem } from '@/lib/supabase'
 import type { InventoryStatus } from '@/lib/pnl/types'
@@ -22,6 +24,26 @@ interface ItemDetailModalProps {
 export function ItemDetailModal({ item, isOpen, onClose, marketPrice, onSellClick }: ItemDetailModalProps) {
   const { formatConverted } = useCurrency()
   const { refreshPrice, isRefreshing } = usePriceRefresh()
+  const updateItem = useUpdateInventoryItem()
+
+  const [isEditingCost, setIsEditingCost] = useState(false)
+  const [editCost, setEditCost] = useState('')
+
+  // Reset edit state when item changes
+  useEffect(() => {
+    if (item) {
+      setEditCost(item.acquisition_cost.toString())
+      setIsEditingCost(false)
+    }
+  }, [item?.id])
+
+  const handleSaveCost = async () => {
+    if (!item) return
+    const newCost = parseFloat(editCost)
+    if (isNaN(newCost) || newCost < 0) return
+    await updateItem.mutateAsync({ id: item.id, acquisition_cost: newCost })
+    setIsEditingCost(false)
+  }
 
   const { data: priceData } = usePriceHistory(item?.card_id, item?.condition || 'NM', '30d')
 
@@ -110,10 +132,38 @@ export function ItemDetailModal({ item, isOpen, onClose, marketPrice, onSellClic
               {/* Financial Summary */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-                  <p className="text-xs text-white/60 font-medium">Cost Basis</p>
-                  <p className="text-lg font-bold text-white">{formatConverted(totalCost)}</p>
-                  {item.quantity > 1 && (
-                    <p className="text-xs text-white/40">{formatConverted(item.acquisition_cost)} each × {item.quantity}</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-white/60 font-medium">Cost Basis</p>
+                    {!isEditingCost ? (
+                      <button onClick={() => setIsEditingCost(true)} className="text-white/40 hover:text-white transition-colors">
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                    ) : (
+                      <button onClick={handleSaveCost} disabled={updateItem.isPending} className="text-green-400 hover:text-green-300 transition-colors">
+                        <Check className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                  {isEditingCost ? (
+                    <div className="flex items-center gap-1">
+                      <span className="text-white/60 font-bold">$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editCost}
+                        onChange={(e) => setEditCost(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSaveCost()}
+                        className="w-full bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-vision-blue/50"
+                        autoFocus
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-lg font-bold text-white">{formatConverted(totalCost)}</p>
+                      {item.quantity > 1 && (
+                        <p className="text-xs text-white/40">{formatConverted(item.acquisition_cost)} each × {item.quantity}</p>
+                      )}
+                    </>
                   )}
                 </div>
                 <div className="rounded-xl bg-white/5 border border-white/10 p-3">
