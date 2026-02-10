@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Clock, TrendingUp, TrendingDown } from 'lucide-react'
 import { useDashboard } from '@/hooks/use-dashboard'
+import { useCurrency } from '@/hooks/use-currency'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { ActivityEvent } from '@/lib/dashboard/activity-formatter'
@@ -58,6 +59,7 @@ export function ActivityFeedCard() {
 }
 
 function ActivityRow({ event }: { event: ActivityEvent }) {
+  const { formatConverted } = useCurrency()
   const Icon = event.type === 'sell' ? TrendingDown : TrendingUp
   const iconColor = event.type === 'sell' ? 'text-vision-green' : 'text-vision-blue'
   const iconBg = event.type === 'sell' ? 'bg-vision-green/20' : 'bg-vision-blue/20'
@@ -86,7 +88,7 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
               event.isPositive ? 'text-vision-green' : 'text-white'
             )}
           >
-            ${event.amount.toFixed(2)}
+            {formatConverted(event.amount)}
           </p>
         </div>
       )}

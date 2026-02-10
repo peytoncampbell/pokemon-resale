@@ -2,18 +2,22 @@
 
 import { MetricCard } from './metric-card'
 import { SkeletonMetricCard } from '@/components/ui/skeleton'
-import { DollarSign, TrendingUp, BarChart3, Receipt } from 'lucide-react'
+import { DollarSign, TrendingUp, BarChart3, Receipt, Bell } from 'lucide-react'
 import { useDashboard } from '@/hooks/use-dashboard'
 import { useCurrency } from '@/hooks/use-currency'
+import { usePriceAlerts } from '@/hooks/use-price-alerts'
 
 export function PortfolioMetrics() {
   const dashboard = useDashboard()
   const { formatConverted } = useCurrency()
+  const { data: allAlerts } = usePriceAlerts()
+  const activeAlerts = allAlerts?.filter((a) => a.isActive && !a.isTriggered) ?? []
+  const triggeredAlerts = allAlerts?.filter((a) => a.isTriggered) ?? []
 
   if (dashboard.isLoading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, i) => (
           <SkeletonMetricCard key={i} />
         ))}
       </div>
@@ -23,7 +27,7 @@ export function PortfolioMetrics() {
   const { portfolioValue, realizedProfit, unrealizedGain, itemCount } = dashboard
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
       <MetricCard
         title="Portfolio Value"
         value={formatConverted(portfolioValue)}
@@ -67,6 +71,17 @@ export function PortfolioMetrics() {
                 value: `${formatConverted(realizedProfit.totalSales)} sales`,
                 isPositive: true,
               }
+            : undefined
+        }
+      />
+      <MetricCard
+        title="Active Alerts"
+        value={String(activeAlerts.length)}
+        icon={Bell}
+        iconColor="orange"
+        trend={
+          triggeredAlerts.length > 0
+            ? { value: `${triggeredAlerts.length} triggered`, isPositive: false }
             : undefined
         }
       />
