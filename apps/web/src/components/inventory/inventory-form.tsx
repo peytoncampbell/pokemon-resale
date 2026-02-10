@@ -73,9 +73,16 @@ export function InventoryForm({ selectedCard, onSubmit, onBack, isSubmitting }: 
           </div>
           <p className="text-sm text-muted-foreground mb-3">{selectedCard.setName}</p>
           {selectedCard.marketPrice && (
-            <Badge variant="info" className="mb-3 rounded-lg">
-              Market Price: {formatCurrency(selectedCard.marketPrice, currency)}
-            </Badge>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <Badge variant="info" className="rounded-lg">
+                Market: {formatCurrency(selectedCard.marketPrice, 'CAD')}
+              </Badge>
+              {selectedCard.marketPriceUsd && (
+                <Badge variant="outline" className="rounded-lg text-muted-foreground">
+                  ({formatCurrency(selectedCard.marketPriceUsd, 'USD')})
+                </Badge>
+              )}
+            </div>
           )}
           <Button
             type="button"

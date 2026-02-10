@@ -360,91 +360,20 @@ export function useSearchCards(query: string, gameType: GameType = 'pokemon', en
   })
 }
 
-// Sealed products from JustTCG API
+// Sealed products via TCGPlayer scraper
 export function useSearchSealed(query: string, gameType: GameType = 'pokemon', enabled = true) {
   return useQuery({
     queryKey: ['sealed', 'search', query, gameType],
-    queryFn: async () => {
-      const params = new URLSearchParams()
-      params.set('game', gameType)
-      if (query) params.set('search', query)
-
-      const authHeaders = await getAuthHeaders()
-      const response = await fetch(`/api/tcg/sealed?${params}`, {
-        headers: authHeaders,
-      })
-      if (!response.ok) {
-        throw new Error('Failed to fetch sealed products')
-      }
-      const result = await response.json()
-
-      // Transform to UnifiedCard format for compatibility
-      return {
-        data: result.data.map((product: {
-          id: string
-          name: string
-          gameType: GameType
-          setName: string
-          imageUrl: string
-          prices: { market: number | null }
-          sealedType: string
-        }) => ({
-          id: product.id,
-          gameType: product.gameType,
-          productType: 'sealed' as const,
-          name: product.name,
-          setName: product.setName,
-          imageSmall: product.imageUrl,
-          marketPrice: product.prices.market,
-          sealedType: product.sealedType,
-        })),
-        totalCount: result.meta.total,
-      }
-    },
-    enabled: enabled,
-    staleTime: 60 * 60 * 1000, // Cache for 1 hour since sealed data changes slowly
+    queryFn: () => cardApi.searchSealed(query, gameType),
+    enabled: enabled && query.length > 0,
+    staleTime: 60 * 60 * 1000,
   })
 }
 
 export function useRecentSealed(gameType: GameType = 'pokemon') {
   return useQuery({
     queryKey: ['sealed', 'recent', gameType],
-    queryFn: async () => {
-      const params = new URLSearchParams()
-      params.set('game', gameType)
-      params.set('limit', '12')
-
-      const authHeaders = await getAuthHeaders()
-      const response = await fetch(`/api/tcg/sealed?${params}`, {
-        headers: authHeaders,
-      })
-      if (!response.ok) {
-        throw new Error('Failed to fetch sealed products')
-      }
-      const result = await response.json()
-
-      return {
-        data: result.data.map((product: {
-          id: string
-          name: string
-          gameType: GameType
-          setName: string
-          imageUrl: string
-          prices: { market: number | null }
-          sealedType: string
-        }) => ({
-          id: product.id,
-          gameType: product.gameType,
-          productType: 'sealed' as const,
-          name: product.name,
-          setName: product.setName,
-          imageSmall: product.imageUrl,
-          marketPrice: product.prices.market,
-          sealedType: product.sealedType,
-        })),
-        totalCount: result.meta.total,
-      }
-    },
+    queryFn: () => cardApi.getRecentSealed(gameType),
     staleTime: 60 * 60 * 1000,
   })
 }

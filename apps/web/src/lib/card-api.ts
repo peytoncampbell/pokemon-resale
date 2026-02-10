@@ -1,42 +1,131 @@
 import type { GameType, ProductType, UnifiedCard, UnifiedSearchResponse } from './card-types'
-import { justTCGApi, JUSTTCG_GAMES, type JustTCGCard } from './justtcg-api'
 
-function fromJustTCG(card: JustTCGCard, gameType: GameType): UnifiedCard {
-  const productType: ProductType = justTCGApi.isSealed(card) ? 'sealed' : 'card'
+// TCGPlayer prices are in USD — convert to CAD
+// TODO: Replace with live exchange rate API
+const USD_TO_CAD = 1.44
+
+function convertUsdToCad(usdPrice: number | null): number | null {
+  if (usdPrice === null) return null
+  return Math.round(usdPrice * USD_TO_CAD * 100) / 100
+}
+
+// Use the TCGPlayer scraper API (Playwright-based)
+const SCRAPER_API = '/api/tcg/scrape'
+
+interface ScrapedCard {
+  productId: string
+  name: string
+  setName: string
+  number: string | null
+  rarity: string | null
+  imageUrl: string
+  marketPrice: number | null
+  lowPrice: number | null
+  productUrl: string
+}
+
+interface ScraperResponse {
+  data: ScrapedCard[]
+  meta: { total: number; page: number; source: string }
+  cached: boolean
+  url: string
+  error?: string
+}
+
+async function fetchScraper(params: Record<string, string>): Promise<ScraperResponse> {
+  const searchParams = new URLSearchParams(params)
+  const url = `${SCRAPER_API}?${searchParams.toString()}`
+
+  // Get auth headers from supabase
+  const { supabase } = await import('@/lib/supabase')
+  const { data: { session } } = await supabase.auth.getSession()
+  const headers: HeadersInit = { Accept: 'application/json' }
+  if (session?.access_token) {
+    headers.Authorization = `Bearer ${session.access_token}`
+  }
+
+  const response = await fetch(url, { headers })
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.error || `Scraper API error: ${response.status}`)
+  }
+  return response.json()
+}
+
+function fromScrapedCard(card: ScrapedCard, gameType: GameType, productType: ProductType = 'card'): UnifiedCard {
   return {
-    id: card.id,
+    id: card.productId,
     gameType,
     productType,
     name: card.name,
-    setName: card.set_name,
-    imageSmall: justTCGApi.getImageUrl(card),
-    rarity: card.rarity,
-    marketPrice: justTCGApi.getMarketPrice(card),
+    setName: card.setName,
+    imageSmall: card.imageUrl || '/card-placeholder.png',
+    rarity: card.rarity || undefined,
+    marketPrice: convertUsdToCad(card.marketPrice),
+    marketPriceUsd: card.marketPrice,
   }
 }
 
 export const cardApi = {
   async searchCards(query: string, gameType: GameType): Promise<UnifiedSearchResponse> {
-    const gameId = JUSTTCG_GAMES[gameType]
-    const cards = await justTCGApi.searchCards(query, gameId)
+    const response = await fetchScraper({
+      game: gameType,
+      q: query,
+      type: 'Cards',
+    })
     return {
-      data: cards.map(card => fromJustTCG(card, gameType)),
-      totalCount: cards.length,
+      data: (response.data || []).map(card => fromScrapedCard(card, gameType, 'card')),
+      totalCount: response.meta?.total ?? response.data?.length ?? 0,
     }
   },
 
   async getRecentCards(gameType: GameType): Promise<UnifiedSearchResponse> {
-    const gameId = JUSTTCG_GAMES[gameType]
-    const cards = await justTCGApi.getRecentCards(gameId)
+    // Scraper doesn't have a "recent" endpoint — search for popular cards
+    const searchTerm = gameType === 'pokemon' ? 'ex' : 'leader'
+    const response = await fetchScraper({
+      game: gameType,
+      q: searchTerm,
+      type: 'Cards',
+    })
     return {
-      data: cards.map(card => fromJustTCG(card, gameType)),
-      totalCount: cards.length,
+      data: (response.data || []).map(card => fromScrapedCard(card, gameType, 'card')),
+      totalCount: response.meta?.total ?? response.data?.length ?? 0,
+    }
+  },
+
+  async searchSealed(query: string, gameType: GameType): Promise<UnifiedSearchResponse> {
+    const response = await fetchScraper({
+      game: gameType,
+      q: query,
+      type: 'Sealed Products',
+    })
+    return {
+      data: (response.data || []).map(card => fromScrapedCard(card, gameType, 'sealed')),
+      totalCount: response.meta?.total ?? response.data?.length ?? 0,
+    }
+  },
+
+  async getRecentSealed(gameType: GameType): Promise<UnifiedSearchResponse> {
+    const searchTerm = gameType === 'pokemon' ? 'booster box' : 'booster box'
+    const response = await fetchScraper({
+      game: gameType,
+      q: searchTerm,
+      type: 'Sealed Products',
+    })
+    return {
+      data: (response.data || []).map(card => fromScrapedCard(card, gameType, 'sealed')),
+      totalCount: response.meta?.total ?? response.data?.length ?? 0,
     }
   },
 
   async getCard(id: string, gameType: GameType): Promise<UnifiedCard> {
-    const card = await justTCGApi.getCard(id)
+    const response = await fetchScraper({
+      game: gameType,
+      q: id,
+      type: 'Cards',
+    })
+    const card = response.data?.find(c => c.productId === id) || response.data?.[0]
     if (!card) throw new Error(`Card not found: ${id}`)
-    return fromJustTCG(card, gameType)
+    return fromScrapedCard(card, gameType)
   },
 }
