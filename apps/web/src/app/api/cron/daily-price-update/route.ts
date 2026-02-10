@@ -3,6 +3,20 @@ import { createClient } from '@supabase/supabase-js'
 import { fetchBatchPrices } from '@/lib/scrapers/price-fetcher'
 import { getStaleCards } from '@/lib/price/staleness'
 
+async function runAlertCheck() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!supabaseUrl || !supabaseKey) return []
+
+  const supabase = createClient(supabaseUrl, supabaseKey)
+  const { data, error } = await supabase.rpc('check_price_alerts')
+  if (error) {
+    console.warn('[CRON] Alert check failed:', error.message)
+    return []
+  }
+  return data || []
+}
+
 export const maxDuration = 60 // Pro tier max
 export const dynamic = 'force-dynamic'
 
@@ -85,6 +99,12 @@ export async function POST(request: NextRequest) {
         delayBetweenMs: 2000,
       })
 
+      // Check price alerts after updating prices
+      const triggeredAlerts = await runAlertCheck()
+      if (triggeredAlerts.length > 0) {
+        console.log(`[CRON] ${triggeredAlerts.length} price alerts triggered`)
+      }
+
       const duration = Date.now() - startTime
       console.log('[CRON] Daily price update completed:', {
         updated: result.succeeded,
@@ -96,6 +116,7 @@ export async function POST(request: NextRequest) {
         updated: result.succeeded,
         failed: result.failed,
         skipped: 0,
+        alertsTriggered: triggeredAlerts.length,
         nextRun: 'tomorrow 2AM UTC',
         duration: `${duration}ms`,
       })
@@ -115,6 +136,12 @@ export async function POST(request: NextRequest) {
       delayBetweenMs: 2000,
     })
 
+    // Check price alerts after updating prices
+    const triggeredAlerts = await runAlertCheck()
+    if (triggeredAlerts.length > 0) {
+      console.log(`[CRON] ${triggeredAlerts.length} price alerts triggered`)
+    }
+
     const duration = Date.now() - startTime
 
     console.log('[CRON] Daily price update completed:', {
@@ -127,6 +154,7 @@ export async function POST(request: NextRequest) {
       updated: result.succeeded,
       failed: result.failed,
       skipped: 0,
+      alertsTriggered: triggeredAlerts.length,
       nextRun: 'tomorrow 2AM UTC',
       duration: `${duration}ms`,
     })

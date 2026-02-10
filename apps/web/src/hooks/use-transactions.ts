@@ -251,6 +251,23 @@ export function useCreateTransaction() {
         newInventory?.forEach((inv, index) => {
           inventoryIdMap.set(index, inv.id)
         })
+
+        // Create acquisition lots for P&L tracking
+        const lotInserts = inItems.map((item, index) => ({
+          inventory_id: inventoryIdMap.get(index)!,
+          organization_id: orgId,
+          quantity_total: item.quantity || 1,
+          quantity_remaining: item.quantity || 1,
+          unit_cost: item.unit_value || 0,
+          acquisition_date: data.transaction_date || new Date().toISOString().split('T')[0],
+        })).filter(lot => lot.inventory_id)
+
+        if (lotInserts.length > 0) {
+          const { error: lotError } = await supabase
+            .from('acquisition_lots')
+            .insert(lotInserts)
+          if (lotError) console.warn('Failed to create acquisition lots:', lotError)
+        }
       }
 
       // Batch update all OUT items to SOLD (1 query instead of N)
@@ -265,6 +282,20 @@ export function useCreateTransaction() {
           .in('id', outInventoryIds)
 
         if (updateError) throw updateError
+
+        // Consume acquisition lots via FIFO for each sold item
+        for (const item of outItems) {
+          if (item.inventory_id) {
+            try {
+              await supabase.rpc('consume_lots_fifo', {
+                p_inventory_id: item.inventory_id,
+                p_quantity: item.quantity || 1,
+              })
+            } catch (e) {
+              console.warn('Failed to consume lots for', item.inventory_id, e)
+            }
+          }
+        }
       }
 
       // Batch insert all transaction items (1 query instead of N)
@@ -307,6 +338,8 @@ export function useCreateTransaction() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['inventory'] })
       queryClient.invalidateQueries({ queryKey: ['analytics'] })
+      queryClient.invalidateQueries({ queryKey: ['pnl'] })
+      queryClient.invalidateQueries({ queryKey: ['prices', 'latest'] })
     },
   })
 }
@@ -403,6 +436,8 @@ export function useDeleteTransaction() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['inventory'] })
       queryClient.invalidateQueries({ queryKey: ['analytics'] })
+      queryClient.invalidateQueries({ queryKey: ['pnl'] })
+      queryClient.invalidateQueries({ queryKey: ['prices', 'latest'] })
     },
   })
 }
