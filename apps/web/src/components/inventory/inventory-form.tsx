@@ -46,7 +46,7 @@ export function InventoryForm({ selectedCard, onSubmit, onBack, isSubmitting }: 
       location: LOCATIONS[0],
       condition: 'NM',
       quantity: 1,
-      acquisitionCost: selectedCard.marketPrice ? convertFromBase(selectedCard.marketPrice) : 0,
+      acquisitionCost: 0,
     },
   })
 

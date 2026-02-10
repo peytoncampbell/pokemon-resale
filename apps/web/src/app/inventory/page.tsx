@@ -81,15 +81,29 @@ export default function InventoryPage() {
     return getFilterCounts(items)
   }, [items])
 
-  // Calculate total value of visible items
-  const totalValue = useMemo(() => {
-    return filteredItems.reduce((sum, item) => {
+  // Helper to get market price for an item from unrealized gains
+  const getMarketPrice = useCallback((itemId: string): number | null => {
+    const gain = unrealizedGains?.find(g => g.inventory_id === itemId)
+    return gain?.current_market_price ?? null
+  }, [unrealizedGains])
+
+  // Calculate total cost and total market value of visible items
+  const { totalCost, totalMarketValue } = useMemo(() => {
+    let cost = 0
+    let market = 0
+    filteredItems.forEach((item) => {
       if (item.status === 'IN_STOCK' || item.status === 'LISTED') {
-        return sum + (item.acquisition_cost * item.quantity)
+        cost += item.acquisition_cost * item.quantity
+        const mp = getMarketPrice(item.id)
+        if (mp !== null) {
+          market += mp * item.quantity
+        } else {
+          market += item.acquisition_cost * item.quantity // fallback to cost if no market price
+        }
       }
-      return sum
-    }, 0)
-  }, [filteredItems])
+    })
+    return { totalCost: cost, totalMarketValue: market }
+  }, [filteredItems, getMarketPrice])
 
   const toggleSelection = useCallback((id: string) => {
     setSelectedIds(prev =>
@@ -123,12 +137,6 @@ export default function InventoryPage() {
   const handleSellModalClose = () => {
     setIsSellModalOpen(false)
     setSelectedItemForSale(null)
-  }
-
-  // Helper to get market price for an item from unrealized gains
-  const getMarketPrice = (itemId: string): number | null => {
-    const gain = unrealizedGains?.find(g => g.inventory_id === itemId)
-    return gain?.current_market_price ?? null
   }
 
   const handleRefreshPrices = () => {
@@ -246,7 +254,7 @@ export default function InventoryPage() {
               </p>
             </>
           }
-          right={`Total Value: ${formatConverted(totalValue)}`}
+          right={`Cost: ${formatConverted(totalCost)} | Market: ${formatConverted(totalMarketValue)}`}
         />
 
         <ErrorBoundary fallback={<div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">Failed to load inventory</div>}>
@@ -312,10 +320,16 @@ export default function InventoryPage() {
                           <div className="flex items-center justify-between pt-2 border-t border-white/10">
                             <div>
                               <p className="text-xs text-white/60 font-medium">Cost</p>
-                              <p className="font-bold text-lg text-vision-cyan">{formatConverted(item.acquisition_cost)}</p>
+                              <p className="font-bold text-lg text-white">{formatConverted(item.acquisition_cost)}</p>
                               {item.quantity > 1 && (
                                 <p className="text-xs text-white/60">Qty: {item.quantity}</p>
                               )}
+                            </div>
+                            <div className="text-center">
+                              <p className="text-xs text-white/60 font-medium">Market</p>
+                              <p className="font-bold text-lg text-vision-cyan">
+                                {getMarketPrice(item.id) !== null ? formatConverted(getMarketPrice(item.id)!) : 'N/A'}
+                              </p>
                             </div>
                             <div>
                               <p className="text-xs text-white/60 font-medium">P&L</p>
