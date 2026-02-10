@@ -225,6 +225,8 @@ export function useAddInventoryItem() {
     onSettled: () => {
       // Always refetch after error or success to sync with server
       queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      // Also refetch P&L data so market prices show up immediately
+      queryClient.invalidateQueries({ queryKey: ['pnl'] })
     },
   })
 }

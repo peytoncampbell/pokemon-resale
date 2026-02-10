@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
 import { useAddInventoryItem } from '@/hooks/use-inventory'
@@ -25,6 +25,32 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
   const addItem = useAddInventoryItem()
   const checkDuplicates = useCheckDuplicates()
 
+  // Save market price snapshot when adding an item
+  const savePriceSnapshot = useCallback(async (card: UnifiedCard) => {
+    if (card.marketPrice == null) return
+    try {
+      const { supabase } = await import('@/lib/supabase')
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: HeadersInit = { 'Content-Type': 'application/json' }
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`
+      }
+      await fetch('/api/prices/snapshot', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          cardId: card.id,
+          cardName: card.name,
+          marketPrice: card.marketPrice,
+          gameType: card.gameType,
+          productType: card.productType,
+        }),
+      })
+    } catch (e) {
+      console.warn('Failed to save price snapshot:', e)
+    }
+  }, [])
+
   const resetState = () => {
     setSelectedCard(null)
     setDuplicates([])
@@ -33,6 +59,9 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
 
   const performAdd = async (data: InventoryFormData) => {
     if (!selectedCard) return
+
+    // Save market price from search results so it shows up immediately
+    await savePriceSnapshot(selectedCard)
 
     await addItem.mutateAsync({
       card_id: selectedCard.id,
