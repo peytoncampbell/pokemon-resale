@@ -2,6 +2,7 @@
 // Queries latest_prices view to determine data freshness
 
 import { createClient } from '@supabase/supabase-js'
+import { headers } from 'next/headers'
 import type { PriceSnapshot, PriceWithFreshness, PriceHistoryPoint } from './types'
 
 // Staleness threshold in hours (48 hours = fresh, 7 days = stale, beyond = very_stale)
@@ -12,14 +13,27 @@ export const STALENESS_THRESHOLD_HOURS = 48
  * Always uses service role key to bypass RLS — all callers are API routes
  * that already verify authentication via verifyApiAuth()
  */
-function getSupabaseClient() {
+function getSupabaseClient(authHeader?: string | null) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-    || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const key = serviceKey || anonKey
 
   if (!url || !key) {
     console.warn('Supabase credentials not available for price operations')
     return null
+  }
+
+  // If we have service role key, use it directly (bypasses RLS)
+  if (serviceKey) {
+    return createClient(url, serviceKey)
+  }
+
+  // Otherwise use anon key with auth header (requires RLS policy for authenticated)
+  if (authHeader) {
+    return createClient(url, key, {
+      global: { headers: { Authorization: authHeader } }
+    })
   }
 
   return createClient(url, key)
@@ -119,9 +133,17 @@ export async function getCardPriceHistory(
 export async function savePriceSnapshot(
   snapshot: Omit<PriceSnapshot, 'id' | 'created_at'>
 ): Promise<boolean> {
-  const supabase = getSupabaseClient()
+  // Try to get auth header from the current request context
+  let authHeader: string | null = null
+  try {
+    const headerStore = await headers()
+    authHeader = headerStore.get('Authorization')
+  } catch {
+    // Not in a request context
+  }
+  const supabase = getSupabaseClient(authHeader)
   if (!supabase) {
-    console.error('Service role key required for saving price snapshots')
+    console.error('Supabase client not available for saving price snapshots')
     return false
   }
 

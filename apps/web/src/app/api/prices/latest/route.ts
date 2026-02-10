@@ -26,7 +26,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 })
   }
 
-  const supabase = createClient(supabaseUrl, supabaseKey)
+  const authHeader = request.headers.get('Authorization')
+  const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(supabaseUrl, supabaseKey)
+    : createClient(supabaseUrl, supabaseKey, {
+        global: { headers: authHeader ? { Authorization: authHeader } : {} }
+      })
 
   const { data, error } = await supabase
     .from('latest_prices')

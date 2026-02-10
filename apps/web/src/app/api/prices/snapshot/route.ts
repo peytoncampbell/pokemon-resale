@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyApiAuth } from '@/lib/api-auth'
-import { savePriceSnapshot } from '@/lib/price/staleness'
+import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +26,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const saved = await savePriceSnapshot({
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 })
+    }
+
+    // Use the request's auth token if no service role key
+    const authHeader = request.headers.get('Authorization')
+    const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? createClient(supabaseUrl, supabaseKey)
+      : createClient(supabaseUrl, supabaseKey, {
+          global: { headers: authHeader ? { Authorization: authHeader } : {} }
+        })
+
+    const { error } = await supabase.from('price_snapshots').insert({
       card_id: cardId,
       card_name: cardName,
       product_type: productType || 'card',
@@ -39,15 +54,20 @@ export async function POST(request: NextRequest) {
       recorded_at: new Date().toISOString(),
     })
 
-    if (!saved) {
-      return NextResponse.json({ error: 'Failed to save snapshot' }, { status: 500 })
+    if (error) {
+      // Duplicate for same card/source/condition/day is OK
+      if (error.code === '23505') {
+        return NextResponse.json({ success: true, duplicate: true })
+      }
+      console.error('Price snapshot insert error:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Price snapshot error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     )
   }
