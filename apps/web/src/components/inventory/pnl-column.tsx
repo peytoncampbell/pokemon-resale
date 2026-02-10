@@ -1,6 +1,7 @@
 'use client'
 
-import { calculateUnrealizedGain, formatPnL, formatPercentage } from '@/lib/pnl/calculations'
+import { calculateUnrealizedGain } from '@/lib/pnl/calculations'
+import { useCurrency } from '@/hooks/use-currency'
 
 interface PnLColumnProps {
   costBasis: number
@@ -9,6 +10,8 @@ interface PnLColumnProps {
 }
 
 export function PnLColumn({ costBasis, marketPrice, quantity }: PnLColumnProps) {
+  const { formatConverted } = useCurrency()
+
   const { unrealized_gain, gain_percentage } = calculateUnrealizedGain(
     costBasis,
     marketPrice,
@@ -24,16 +27,16 @@ export function PnLColumn({ costBasis, marketPrice, quantity }: PnLColumnProps) 
     )
   }
 
-  const pnl = formatPnL(unrealized_gain)
-  const percentage = formatPercentage(gain_percentage)
+  const isPositive = unrealized_gain >= 0
+  const colorClass = isPositive ? 'text-green-400' : 'text-red-400'
 
   return (
     <div className="flex flex-col gap-0.5">
-      <span className={`text-sm font-semibold ${pnl.colorClass}`}>
-        {pnl.formatted}
+      <span className={`text-sm font-semibold ${colorClass}`}>
+        {isPositive ? '+' : ''}{formatConverted(unrealized_gain)}
       </span>
-      <span className={`text-xs ${percentage.colorClass}`}>
-        {percentage.formatted}
+      <span className={`text-xs ${colorClass}`}>
+        {isPositive ? '+' : ''}{gain_percentage.toFixed(1)}%
       </span>
     </div>
   )
