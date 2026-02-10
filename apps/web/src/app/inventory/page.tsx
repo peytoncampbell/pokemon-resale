@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useInventoryItems, useDeleteInventoryItem } from '@/hooks/use-inventory'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
 import { useInventoryFilters, filterInventory, getUniqueLocations, getFilterCounts } from '@/hooks/use-inventory-filters'
 import { useExportInventory } from '@/hooks/use-export'
 import { useCurrency } from '@/hooks/use-currency'
@@ -63,6 +65,29 @@ export default function InventoryPage() {
   const { data: unrealizedGains } = useUnrealizedGains()
   const { refreshPrices, isRefreshing } = useBatchPriceRefresh()
 
+  // Direct price lookup as fallback (bypasses acquisition_lots dependency)
+  const cardIds = useMemo(() => {
+    if (!items) return []
+    return [...new Set(items.map(i => i.card_id))]
+  }, [items])
+
+  const { data: latestPrices } = useQuery({
+    queryKey: ['prices', 'latest', cardIds],
+    queryFn: async () => {
+      if (cardIds.length === 0) return {}
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: HeadersInit = {}
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`
+      }
+      const res = await fetch(`/api/prices/latest?cardIds=${cardIds.join(',')}`, { headers })
+      if (!res.ok) return {}
+      return res.json() as Promise<Record<string, number | null>>
+    },
+    enabled: cardIds.length > 0,
+    staleTime: 60_000,
+  })
+
   // Apply filters and sorting
   const filteredItems = useMemo(() => {
     if (!items) return []
@@ -81,11 +106,15 @@ export default function InventoryPage() {
     return getFilterCounts(items)
   }, [items])
 
-  // Helper to get market price for an item from unrealized gains
-  const getMarketPrice = useCallback((itemId: string): number | null => {
+  // Helper to get market price — tries unrealized gains first, falls back to direct price lookup
+  const getMarketPrice = useCallback((itemId: string, cardId?: string): number | null => {
+    // Try unrealized gains first (has acquisition lots)
     const gain = unrealizedGains?.find(g => g.inventory_id === itemId)
-    return gain?.current_market_price ?? null
-  }, [unrealizedGains])
+    if (gain?.current_market_price != null) return gain.current_market_price
+    // Fallback: direct price lookup by card_id
+    if (cardId && latestPrices?.[cardId] != null) return latestPrices[cardId]!
+    return null
+  }, [unrealizedGains, latestPrices])
 
   // Calculate total cost and total market value of visible items
   const { totalCost, totalMarketValue } = useMemo(() => {
@@ -94,7 +123,7 @@ export default function InventoryPage() {
     filteredItems.forEach((item) => {
       if (item.status === 'IN_STOCK' || item.status === 'LISTED') {
         cost += item.acquisition_cost * item.quantity
-        const mp = getMarketPrice(item.id)
+        const mp = getMarketPrice(item.id, item.card_id)
         if (mp !== null) {
           market += mp * item.quantity
         } else {
@@ -328,14 +357,14 @@ export default function InventoryPage() {
                             <div className="text-center">
                               <p className="text-xs text-white/60 font-medium">Market</p>
                               <p className="font-bold text-lg text-vision-cyan">
-                                {getMarketPrice(item.id) !== null ? formatConverted(getMarketPrice(item.id)!) : 'N/A'}
+                                {getMarketPrice(item.id, item.card_id) !== null ? formatConverted(getMarketPrice(item.id, item.card_id)!) : 'N/A'}
                               </p>
                             </div>
                             <div>
                               <p className="text-xs text-white/60 font-medium">P&L</p>
                               <PnLColumn
                                 costBasis={item.acquisition_cost * item.quantity}
-                                marketPrice={getMarketPrice(item.id)}
+                                marketPrice={getMarketPrice(item.id, item.card_id)}
                                 quantity={item.quantity}
                               />
                             </div>
@@ -426,7 +455,7 @@ export default function InventoryPage() {
                           <p className="text-xs text-white/60 font-medium">P&L</p>
                           <PnLColumn
                             costBasis={item.acquisition_cost * item.quantity}
-                            marketPrice={getMarketPrice(item.id)}
+                            marketPrice={getMarketPrice(item.id, item.card_id)}
                             quantity={item.quantity}
                           />
                         </div>
@@ -503,7 +532,7 @@ export default function InventoryPage() {
         item={selectedItemForDetail}
         isOpen={!!selectedItemForDetail}
         onClose={() => setSelectedItemForDetail(null)}
-        marketPrice={selectedItemForDetail ? getMarketPrice(selectedItemForDetail.id) : null}
+        marketPrice={selectedItemForDetail ? getMarketPrice(selectedItemForDetail.id, selectedItemForDetail.card_id) : null}
         onSellClick={handleSellClick}
       />
 

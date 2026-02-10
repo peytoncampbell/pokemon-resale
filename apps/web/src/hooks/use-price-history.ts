@@ -214,6 +214,7 @@ export function useBatchPriceRefresh() {
       // Invalidate price and P&L queries to refetch with new prices
       queryClient.invalidateQueries({ queryKey: ['price-history'] })
       queryClient.invalidateQueries({ queryKey: ['pnl'] })
+      queryClient.invalidateQueries({ queryKey: ['prices', 'latest'] })
     },
   })
 

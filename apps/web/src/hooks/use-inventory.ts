@@ -176,6 +176,22 @@ export function useAddInventoryItem() {
 
       if (error) throw error
 
+      // Create acquisition lot for P&L tracking
+      const { error: lotError } = await supabase
+        .from('acquisition_lots')
+        .insert({
+          inventory_id: result.id,
+          organization_id: orgId,
+          quantity_total: data.quantity || 1,
+          quantity_remaining: data.quantity || 1,
+          unit_cost: data.acquisition_cost,
+          acquisition_date: new Date().toISOString().split('T')[0],
+        })
+
+      if (lotError) {
+        console.warn('Failed to create acquisition lot:', lotError)
+      }
+
       return result
     },
     // Optimistic update
