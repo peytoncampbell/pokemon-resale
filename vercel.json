@@ -4,13 +4,6 @@
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
   "installCommand": "npm install --legacy-peer-deps",
-  "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@supabase-url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase-anon-key",
-    "JUSTTCG_API_KEY": "@justtcg-api-key",
-    "NEXT_PUBLIC_SENTRY_DSN": "@sentry-dsn",
-    "NEXT_PUBLIC_PLAUSIBLE_DOMAIN": "@plausible-domain"
-  },
   "crons": [
     {
       "path": "/api/cron/update-prices",
