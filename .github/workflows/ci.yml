@@ -38,3 +38,22 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+
+      - name: Run Lighthouse CI
+        run: |
+          npm install -g @lhci/cli@0.15.x
+          npm run start &
+          npx wait-on http://localhost:3000
+          lhci autorun --config=.lighthouserc.js || echo "Lighthouse CI failed with thresholds, but continuing..."
+        working-directory: pokemon-resale/apps/web
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+
+      - name: Upload Lighthouse results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-results
+          path: pokemon-resale/apps/web/.lighthouseci/
+          retention-days: 30

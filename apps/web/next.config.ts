@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import withBundleAnalyzer from "@next/bundle-analyzer";
 
 const nextConfig: NextConfig = {
   // Mark playwright packages as external - they're only used server-side
@@ -25,7 +26,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+// Configure bundle analyzer (enabled via ANALYZE=true env var)
+const bundleAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+  openAnalyzer: true,
+});
+
+// Wrap with both bundle analyzer and Sentry
+const configWithAnalyzer = bundleAnalyzer(nextConfig);
+
+export default withSentryConfig(configWithAnalyzer, {
   silent: true,
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
