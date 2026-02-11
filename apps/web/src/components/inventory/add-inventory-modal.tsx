@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Button } from '@/components/ui/button'
-import { X } from 'lucide-react'
+import { Dialog } from '@/components/ui/dialog'
 import { useAddInventoryItem } from '@/hooks/use-inventory'
 import { useCheckDuplicates } from '@/hooks/use-bulk-operations'
 import type { UnifiedCard } from '@/lib/card-types'
@@ -119,42 +118,25 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
     onClose()
   }
 
-  if (!open) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-background/90 backdrop-blur-md"
-        onClick={handleClose}
-      />
-
-      {/* Modal Content */}
-      <div role="dialog" aria-modal="true" aria-labelledby="modal-title-add-inventory" className="relative w-full max-w-6xl max-h-[90vh] overflow-hidden bg-background rounded-3xl shadow-2xl m-4 flex flex-col border-none">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b bg-gradient-to-r from-background to-accent/5 px-6 py-5">
-          <h2 id="modal-title-add-inventory" className="text-2xl font-bold bg-gradient-to-r from-vision-blue to-vision-cyan bg-clip-text text-transparent">
-            Add {selectedCard?.productType === 'sealed' ? 'Sealed Product' : 'Card'} to Inventory
-          </h2>
-          <Button variant="ghost" size="icon" onClick={handleClose} className="rounded-xl hover:bg-accent/50" aria-label="Close dialog">
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto">
-          {!selectedCard ? (
-            <CardSearchPanel onCardSelect={handleCardSelect} />
-          ) : (
-            <InventoryForm
-              selectedCard={selectedCard}
-              onSubmit={handleFormSubmit}
-              onBack={() => setSelectedCard(null)}
-              isSubmitting={addItem.isPending}
-            />
-          )}
-        </div>
-      </div>
+    <>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        title={`Add ${selectedCard?.productType === 'sealed' ? 'Sealed Product' : 'Card'} to Inventory`}
+        size="xl"
+      >
+        {!selectedCard ? (
+          <CardSearchPanel onCardSelect={handleCardSelect} />
+        ) : (
+          <InventoryForm
+            selectedCard={selectedCard}
+            onSubmit={handleFormSubmit}
+            onBack={() => setSelectedCard(null)}
+            isSubmitting={addItem.isPending}
+          />
+        )}
+      </Dialog>
 
       {/* Duplicate Warning Modal */}
       <DuplicateWarningModal
@@ -167,6 +149,6 @@ export function AddInventoryModal({ open, onClose }: AddInventoryModalProps) {
         duplicates={duplicates}
         cardName={selectedCard?.name || ''}
       />
-    </div>
+    </>
   )
 }
