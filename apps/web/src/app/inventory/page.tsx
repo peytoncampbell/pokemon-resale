@@ -14,7 +14,7 @@ import { useInventoryFilters, filterInventory, getUniqueLocations, getFilterCoun
 import { useExportInventory } from '@/hooks/use-export'
 import { useCurrency } from '@/hooks/use-currency'
 import { useUnrealizedGains } from '@/hooks/use-pnl'
-import { Grid3X3, List, Plus, Search, MapPin, Trash2, DollarSign, Upload, RefreshCw } from 'lucide-react'
+import { Grid3X3, List, Plus, Search, MapPin, Trash2, DollarSign, Upload, RefreshCw, Zap } from 'lucide-react'
 import { AddInventoryModal } from '@/components/inventory/add-inventory-modal'
 import { BulkActionBar } from '@/components/inventory/bulk-action-bar'
 import { FilterPanel } from '@/components/inventory/filter-panel'
@@ -28,6 +28,7 @@ import { ErrorBoundary } from '@/components/error-boundary'
 import { useBatchPriceRefresh } from '@/hooks/use-price-history'
 import { ItemDetailModal } from '@/components/inventory/item-detail-modal'
 import { SellModal } from '@/components/inventory/sell-modal'
+import { QuickSellModal } from '@/components/inventory/quick-sell-modal'
 import { StatusBadge } from '@/components/inventory/status-badge'
 import { PnLColumn } from '@/components/inventory/pnl-column'
 import { CSVImportWizard } from '@/components/inventory/csv-import-wizard'
@@ -46,8 +47,10 @@ export default function InventoryPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isSellModalOpen, setIsSellModalOpen] = useState(false)
+  const [isQuickSellModalOpen, setIsQuickSellModalOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [selectedItemForSale, setSelectedItemForSale] = useState<InventoryItem | null>(null)
+  const [selectedItemForQuickSell, setSelectedItemForQuickSell] = useState<InventoryItem | null>(null)
   const [selectedItemForDetail, setSelectedItemForDetail] = useState<InventoryItem | null>(null)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
@@ -184,6 +187,16 @@ export default function InventoryPage() {
   const handleSellModalClose = () => {
     setIsSellModalOpen(false)
     setSelectedItemForSale(null)
+  }
+
+  const handleQuickSellClick = (item: InventoryItem) => {
+    setSelectedItemForQuickSell(item)
+    setIsQuickSellModalOpen(true)
+  }
+
+  const handleQuickSellModalClose = () => {
+    setIsQuickSellModalOpen(false)
+    setSelectedItemForQuickSell(null)
   }
 
   const handleRefreshPrices = () => {
@@ -394,18 +407,31 @@ export default function InventoryPage() {
                           </div>
                           <div className="flex gap-2">
                             {(item.status === 'IN_STOCK' || item.status === 'LISTED') && (
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleSellClick(item)
-                                }}
-                                className="flex-1 z-20"
-                              >
-                                <DollarSign className="h-3 w-3 mr-1" />
-                                Sell
-                              </Button>
+                              <>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleQuickSellClick(item)
+                                  }}
+                                  className="flex-1 z-20 bg-gradient-to-r from-vision-blue to-vision-cyan"
+                                >
+                                  <Zap className="h-3 w-3 mr-1" />
+                                  Quick Sell
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleSellClick(item)
+                                  }}
+                                  className="z-20"
+                                >
+                                  <DollarSign className="h-3 w-3" />
+                                </Button>
+                              </>
                             )}
                             <Button
                               variant="ghost"
@@ -483,17 +509,30 @@ export default function InventoryPage() {
                           />
                         </div>
                         {(item.status === 'IN_STOCK' || item.status === 'LISTED') && (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleSellClick(item)
-                            }}
-                          >
-                            <DollarSign className="h-3 w-3 mr-1" />
-                            Sell
-                          </Button>
+                          <>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleQuickSellClick(item)
+                              }}
+                              className="bg-gradient-to-r from-vision-blue to-vision-cyan"
+                            >
+                              <Zap className="h-3 w-3 mr-1" />
+                              Quick Sell
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleSellClick(item)
+                              }}
+                            >
+                              <DollarSign className="h-3 w-3" />
+                            </Button>
+                          </>
                         )}
                         <Button
                           variant="ghost"
@@ -563,6 +602,12 @@ export default function InventoryPage() {
         item={selectedItemForSale}
         isOpen={isSellModalOpen}
         onClose={handleSellModalClose}
+      />
+
+      <QuickSellModal
+        item={selectedItemForQuickSell}
+        open={isQuickSellModalOpen}
+        onClose={handleQuickSellModalClose}
       />
 
       <CSVImportWizard
