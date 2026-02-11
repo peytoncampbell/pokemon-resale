@@ -1,4 +1,5 @@
 import type { GameType, ProductType, UnifiedCard, UnifiedSearchResponse } from './card-types'
+import { fetchWithTimeout, TIMEOUTS } from './fetch-with-timeout'
 
 // TCGPlayer prices are in USD — stored as-is
 // Currency conversion handled by CurrencyProvider at display time
@@ -38,7 +39,7 @@ async function fetchScraper(params: Record<string, string>): Promise<ScraperResp
     headers.Authorization = `Bearer ${session.access_token}`
   }
 
-  const response = await fetch(url, { headers })
+  const response = await fetchWithTimeout(url, { headers, timeoutMs: TIMEOUTS.SCRAPING })
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
     throw new Error(errorData.error || `Scraper API error: ${response.status}`)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyApiAuth } from '@/lib/api-auth'
+import { fetchWithTimeout, TIMEOUTS } from '@/lib/fetch-with-timeout'
 
 const JUSTTCG_API_BASE = 'https://api.justtcg.com/v1'
 const API_KEY = process.env.JUSTTCG_API_KEY
@@ -47,7 +48,7 @@ async function fetchWithRetry(
   maxRetries = 3
 ): Promise<Response> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const response = await fetch(url, options)
+    const response = await fetchWithTimeout(url, { ...options, timeoutMs: TIMEOUTS.SCRAPING })
 
     if (response.status !== 429 || attempt === maxRetries) {
       return response

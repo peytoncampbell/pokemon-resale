@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { PnLSummary, RealizedProfit, UnrealizedGain } from '@/lib/pnl/types'
+import { fetchWithTimeout, TIMEOUTS } from '@/lib/fetch-with-timeout'
 
 // Helper to get auth headers from Supabase session
 async function getAuthHeaders(): Promise<HeadersInit> {
@@ -20,7 +21,8 @@ export function usePnLSummary() {
       const params = new URLSearchParams()
       params.set('type', 'summary')
 
-      const response = await fetch(`/api/pnl?${params}`, {
+      const response = await fetchWithTimeout(`/api/pnl?${params}`, {
+        timeoutMs: TIMEOUTS.DEFAULT,
         headers: authHeaders,
       })
 
@@ -44,7 +46,8 @@ export function useUnrealizedGains() {
       const params = new URLSearchParams()
       params.set('type', 'unrealized')
 
-      const response = await fetch(`/api/pnl?${params}`, {
+      const response = await fetchWithTimeout(`/api/pnl?${params}`, {
+        timeoutMs: TIMEOUTS.DEFAULT,
         headers: authHeaders,
       })
 
@@ -71,7 +74,8 @@ export function useRealizedProfits(days?: number) {
         params.set('days', String(days))
       }
 
-      const response = await fetch(`/api/pnl?${params}`, {
+      const response = await fetchWithTimeout(`/api/pnl?${params}`, {
+        timeoutMs: TIMEOUTS.DEFAULT,
         headers: authHeaders,
       })
 

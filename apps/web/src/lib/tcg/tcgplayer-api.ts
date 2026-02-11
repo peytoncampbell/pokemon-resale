@@ -2,6 +2,7 @@
 // Uses TCGPlayer's internal search + product details APIs
 
 import type { GameType } from './types'
+import { fetchWithTimeout, TIMEOUTS } from '../fetch-with-timeout'
 
 const SEARCH_API = 'https://mp-search-api.tcgplayer.com/v1'
 const HEADERS = {
@@ -73,9 +74,10 @@ export async function searchTCGPlayer(
     sort: {},
   }
 
-  const response = await fetch(
+  const response = await fetchWithTimeout(
     `${SEARCH_API}/search/request?q=${encodeURIComponent(query)}&isList=false`,
     {
+      timeoutMs: TIMEOUTS.DEFAULT,
       method: 'POST',
       headers: HEADERS,
       body: JSON.stringify(body),
@@ -111,7 +113,8 @@ export async function searchTCGPlayer(
 async function fetchProductDetails(productIds: number[]): Promise<TCGPlayerProduct[]> {
   const results = await Promise.allSettled(
     productIds.map(async (id) => {
-      const response = await fetch(`${SEARCH_API}/product/${id}/details`, {
+      const response = await fetchWithTimeout(`${SEARCH_API}/product/${id}/details`, {
+        timeoutMs: TIMEOUTS.DEFAULT,
         headers: HEADERS,
       })
       if (!response.ok) return null

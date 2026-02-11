@@ -8,6 +8,7 @@ import {
 } from '@/lib/tcg/graded'
 import { generateCacheKey, tcgCache } from '@/lib/tcg/cache'
 import { verifyApiAuth } from '@/lib/api-auth'
+import { fetchWithTimeout, TIMEOUTS } from '@/lib/fetch-with-timeout'
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -42,7 +43,8 @@ async function scrapeEbaySoldListings(
   })
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
+      timeoutMs: TIMEOUTS.SCRAPING,
       headers: {
         'User-Agent': getRandomUserAgent(),
         Accept:

@@ -3,6 +3,7 @@
 // Uses server-side proxy to keep API key secure
 
 import { supabase } from '@/lib/supabase'
+import { fetchWithTimeout, TIMEOUTS } from './fetch-with-timeout'
 
 const JUSTTCG_API_BASE = '/api/justtcg'
 
@@ -77,7 +78,8 @@ async function fetchJustTCG<T>(endpoint: string, params?: Record<string, string>
   const url = `${JUSTTCG_API_BASE}${endpoint}${queryString ? `?${queryString}` : ''}`
 
   const authHeaders = await getAuthHeaders()
-  const response = await fetch(url, {
+  const response = await fetchWithTimeout(url, {
+    timeoutMs: TIMEOUTS.SCRAPING,
     headers: {
       'Accept': 'application/json',
       ...authHeaders,

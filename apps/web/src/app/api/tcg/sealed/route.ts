@@ -3,6 +3,7 @@ import type { GameType, SealedProduct, SealedType } from '@/lib/tcg/types'
 import { detectSealedType } from '@/lib/tcg/types'
 import { generateCacheKey, tcgCache } from '@/lib/tcg/cache'
 import { verifyApiAuth } from '@/lib/api-auth'
+import { fetchWithTimeout, TIMEOUTS } from '@/lib/fetch-with-timeout'
 
 // Maximum allowed limit to prevent DoS
 const MAX_LIMIT = 100
@@ -101,7 +102,8 @@ async function scrapePriceCharting(
   }
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
+      timeoutMs: TIMEOUTS.SCRAPING,
       headers: {
         'User-Agent': getRandomUserAgent(),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { ImportRow } from '@/lib/pnl/types'
+import { fetchWithTimeout, TIMEOUTS } from '@/lib/fetch-with-timeout'
 
 // Helper to get auth headers from Supabase session
 async function getAuthHeaders(): Promise<HeadersInit> {
@@ -39,7 +40,8 @@ export function useImportUpload() {
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await fetch('/api/inventory/import', {
+      const response = await fetchWithTimeout('/api/inventory/import', {
+        timeoutMs: TIMEOUTS.UPLOADS,
         method: 'POST',
         headers: authHeaders,
         body: formData,
@@ -74,7 +76,8 @@ export function useImportPreview(sessionId: string | null) {
       const params = new URLSearchParams()
       params.set('session_id', sessionId)
 
-      const response = await fetch(`/api/inventory/import/preview?${params}`, {
+      const response = await fetchWithTimeout(`/api/inventory/import/preview?${params}`, {
+        timeoutMs: TIMEOUTS.DEFAULT,
         headers: authHeaders,
       })
 
@@ -98,7 +101,8 @@ export function useImportCommit() {
   return useMutation({
     mutationFn: async (sessionId: string): Promise<ImportCommitResponse> => {
       const authHeaders = await getAuthHeaders()
-      const response = await fetch('/api/inventory/import/commit', {
+      const response = await fetchWithTimeout('/api/inventory/import/commit', {
+        timeoutMs: TIMEOUTS.DEFAULT,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
