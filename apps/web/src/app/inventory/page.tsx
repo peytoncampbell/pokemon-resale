@@ -65,6 +65,24 @@ export default function InventoryPage() {
   const { data: unrealizedGains } = useUnrealizedGains()
   const { refreshPrices, isRefreshing } = useBatchPriceRefresh()
 
+  // Fetch last price update timestamp
+  const { data: lastPriceUpdate } = useQuery({
+    queryKey: ['inventory', 'last-price-update'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('price_updated_at')
+        .not('price_updated_at', 'is', null)
+        .order('price_updated_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (error || !data) return null
+      return (data as unknown as { price_updated_at: string }).price_updated_at
+    },
+    staleTime: 60_000,
+  })
+
   // Direct price lookup as fallback (bypasses acquisition_lots dependency)
   const cardIds = useMemo(() => {
     if (!items) return []
@@ -204,7 +222,12 @@ export default function InventoryPage() {
           title="Inventory"
           description="Manage your Pokemon card collection"
           actions={
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              {lastPriceUpdate && (
+                <span className="text-xs text-muted-foreground mr-2">
+                  Last refreshed: {new Date(lastPriceUpdate).toLocaleString()}
+                </span>
+              )}
               <Button variant="outline" onClick={handleRefreshPrices} disabled={isRefreshing || !items?.length}>
                 <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                 {isRefreshing ? 'Refreshing...' : 'Refresh Prices'}
