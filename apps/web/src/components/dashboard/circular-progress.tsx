@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { colors, animations, withOpacity } from "@/lib/design-tokens"
 
 interface CircularProgressProps {
   value: number
@@ -32,7 +33,7 @@ export function CircularProgress({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(255, 255, 255, 0.1)"
+          stroke={colors.border}
           strokeWidth={strokeWidth}
         />
         {/* Progress circle */}
@@ -46,12 +47,14 @@ export function CircularProgress({
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          className="transition-all duration-500 ease-out"
+          style={{
+            transition: `all ${animations.duration.slow} ${animations.easing.out}`,
+          }}
         />
         <defs>
           <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#0075FF" />
-            <stop offset="100%" stopColor="#00E5FF" />
+            <stop offset="0%" stopColor={colors.vision.blue} />
+            <stop offset="100%" stopColor={colors.vision.cyan} />
           </linearGradient>
         </defs>
       </svg>

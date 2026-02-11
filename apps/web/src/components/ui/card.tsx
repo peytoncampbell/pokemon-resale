@@ -1,9 +1,10 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { cva, type VariantProps } from "class-variance-authority"
+import { animations, borderRadius } from "@/lib/design-tokens"
 
 const cardVariants = cva(
-  "rounded-xl text-card-foreground transition-all duration-200",
+  "text-card-foreground",
   {
     variants: {
       variant: {
@@ -19,15 +20,21 @@ const cardVariants = cva(
   }
 )
 
+const cardStyles = {
+  borderRadius: borderRadius.xl,
+  transition: animations.transition.normal,
+}
+
 export interface CardProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof cardVariants> {}
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, variant, ...props }, ref) => (
+  ({ className, variant, style, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(cardVariants({ variant }), className)}
+      style={{ ...cardStyles, ...style }}
       {...props}
     />
   )

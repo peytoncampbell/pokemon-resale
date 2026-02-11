@@ -3,6 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowRight } from "lucide-react"
 import { useAuthContext } from "@/components/providers/auth-provider"
+import { colors, animations } from "@/lib/design-tokens"
 
 export function WelcomeBanner() {
   const { user } = useAuthContext()
@@ -12,7 +13,12 @@ export function WelcomeBanner() {
   const displayName = firstName.charAt(0).toUpperCase() + firstName.slice(1)
 
   return (
-    <Card className="relative overflow-hidden bg-gradient-to-r from-[#0075FF] via-[#00A3FF] to-[#00E5FF]">
+    <Card 
+      className="relative overflow-hidden" 
+      style={{ 
+        background: `linear-gradient(to right, ${colors.vision.blue}, #00A3FF, ${colors.vision.cyan})` 
+      }}
+    >
       <CardContent className="p-0">
         <div className="flex items-center justify-between">
           <div className="p-8 space-y-3">
@@ -21,9 +27,15 @@ export function WelcomeBanner() {
             <p className="text-white/70 text-sm max-w-xs">
               Glad to see you again! Track your Pokemon card inventory and monitor your sales.
             </p>
-            <button className="flex items-center gap-2 text-white text-sm font-medium hover:gap-3 transition-all mt-4 group">
+            <button 
+              className="flex items-center gap-2 text-white text-sm font-medium hover:gap-3 mt-4 group"
+              style={{ transition: animations.transition.normal }}
+            >
               Tap to record
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight 
+                className="h-4 w-4 group-hover:translate-x-1" 
+                style={{ transition: animations.transition.normal }}
+              />
             </button>
           </div>
           
