@@ -3,7 +3,8 @@
 import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { useBulkUpdateInventory, useBulkDeleteInventory } from '@/hooks/use-bulk-operations'
-import { Trash2, MapPin, Tag, X, CheckCircle } from 'lucide-react'
+import { usePermissions } from '@/hooks/use-permissions'
+import { Trash2, MapPin, Tag, X, CheckCircle, ShieldAlert } from 'lucide-react'
 
 const LOCATIONS = [
   'BIN-01', 'BIN-02', 'BIN-03', 'BIN-04', 'BIN-05',
@@ -24,6 +25,7 @@ interface BulkActionBarProps {
 export function BulkActionBar({ selectedIds, onClearSelection }: BulkActionBarProps) {
   const [showLocationDropdown, setShowLocationDropdown] = useState(false)
   const [showStatusDropdown, setShowStatusDropdown] = useState(false)
+  const { canEdit } = usePermissions()
 
   const bulkUpdate = useBulkUpdateInventory()
   const bulkDelete = useBulkDeleteInventory()
@@ -67,7 +69,14 @@ export function BulkActionBar({ selectedIds, onClearSelection }: BulkActionBarPr
           <span className="font-semibold text-white">{selectedIds.length} selected</span>
         </div>
 
-        <div className="relative">
+        {!canEdit ? (
+          <div className="flex items-center gap-2 text-white/60">
+            <ShieldAlert className="h-4 w-4" />
+            <span className="text-sm">View-only access</span>
+          </div>
+        ) : (
+          <>
+            <div className="relative">
           <Button
             variant="outline"
             size="sm"
@@ -125,16 +134,19 @@ export function BulkActionBar({ selectedIds, onClearSelection }: BulkActionBarPr
           )}
         </div>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleDelete}
-          disabled={isLoading}
-          className="gap-2 text-red-400 hover:text-red-300 hover:bg-red-500/10"
-        >
-          <Trash2 className="h-4 w-4" />
-          Delete
-        </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDelete}
+              disabled={isLoading}
+              className="gap-2 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+              aria-label="Delete selected items"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+          </>
+        )}
 
         <div className="pl-2 border-l border-white/10">
           <Button

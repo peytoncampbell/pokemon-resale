@@ -9,6 +9,7 @@ import { usePriceHistory } from '@/hooks/use-price-history'
 import { usePriceRefresh } from '@/hooks/use-price-history'
 import { useUpdateInventoryItem } from '@/hooks/use-inventory'
 import { useCurrency } from '@/hooks/use-currency'
+import { usePermissions } from '@/hooks/use-permissions'
 import type { InventoryItem } from '@/lib/supabase'
 import type { InventoryStatus } from '@/lib/pnl/types'
 import Image from 'next/image'
@@ -25,6 +26,7 @@ export function ItemDetailModal({ item, isOpen, onClose, marketPrice, onSellClic
   const { formatConverted } = useCurrency()
   const { refreshPrice, isRefreshing } = usePriceRefresh()
   const updateItem = useUpdateInventoryItem()
+  const { canEdit } = usePermissions()
 
   const [isEditingCost, setIsEditingCost] = useState(false)
   const [editCost, setEditCost] = useState('')
@@ -134,14 +136,16 @@ export function ItemDetailModal({ item, isOpen, onClose, marketPrice, onSellClic
                 <div className="rounded-xl bg-white/5 border border-white/10 p-3">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-xs text-white/60 font-medium">Cost Basis</p>
-                    {!isEditingCost ? (
-                      <button onClick={() => setIsEditingCost(true)} className="text-white/40 hover:text-white transition-colors">
-                        <Pencil className="h-3 w-3" />
-                      </button>
-                    ) : (
-                      <button onClick={handleSaveCost} disabled={updateItem.isPending} className="text-green-400 hover:text-green-300 transition-colors">
-                        <Check className="h-3 w-3" />
-                      </button>
+                    {canEdit && (
+                      !isEditingCost ? (
+                        <button onClick={() => setIsEditingCost(true)} className="text-white/40 hover:text-white transition-colors" aria-label="Edit cost">
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                      ) : (
+                        <button onClick={handleSaveCost} disabled={updateItem.isPending} className="text-green-400 hover:text-green-300 transition-colors" aria-label="Save cost">
+                          <Check className="h-3 w-3" />
+                        </button>
+                      )
                     )}
                   </div>
                   {isEditingCost ? (
@@ -290,7 +294,7 @@ export function ItemDetailModal({ item, isOpen, onClose, marketPrice, onSellClic
           <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing} className="flex-1">
             {isRefreshing ? 'Refreshing...' : 'Refresh Price'}
           </Button>
-          {(item.status === 'IN_STOCK' || item.status === 'LISTED') && (
+          {canEdit && (item.status === 'IN_STOCK' || item.status === 'LISTED') && (
             <Button
               variant="default"
               onClick={() => {

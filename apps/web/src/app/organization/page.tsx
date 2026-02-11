@@ -10,13 +10,13 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { 
   useOrganization, 
-  useOrganizationMembers, 
   useOrganizationInvites,
   useUpdateOrganization,
   useRegenerateInviteCode,
   useDeleteInvite,
   useRemoveMember
 } from '@/hooks/use-organization'
+import { usePermissions, useOrganizationMembersWithRoles } from '@/hooks/use-permissions'
 import { useAuthContext } from '@/components/providers/auth-provider'
 import { InviteModal } from '@/components/organization/invite-modal'
 import { 
@@ -28,14 +28,16 @@ import {
   Mail, 
   Trash2,
   Loader2,
-  UserPlus
+  UserPlus,
+  Shield
 } from 'lucide-react'
 
 export default function OrganizationPage() {
   const { user } = useAuthContext()
   const { data: organization, isLoading: orgLoading } = useOrganization()
-  const { data: members, isLoading: membersLoading } = useOrganizationMembers()
+  const { data: members, isLoading: membersLoading } = useOrganizationMembersWithRoles()
   const { data: invites, isLoading: invitesLoading } = useOrganizationInvites()
+  const { canManageSettings, canManageMembers, isAdmin, role } = usePermissions()
   
   const updateOrg = useUpdateOrganization()
   const regenerateCode = useRegenerateInviteCode()
@@ -104,12 +106,31 @@ export default function OrganizationPage() {
           title="Organization Settings"
           description="Manage your team and organization settings"
           actions={
-            <Button onClick={() => setIsInviteModalOpen(true)}>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Invite Member
-            </Button>
+            canManageMembers ? (
+              <Button onClick={() => setIsInviteModalOpen(true)}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Invite Member
+              </Button>
+            ) : undefined
           }
         />
+
+        {/* Permission Notice for non-admins */}
+        {!isAdmin && role && (
+          <div className="rounded-xl border border-vision-blue/20 bg-vision-blue/10 p-4 flex items-start gap-3">
+            <Shield className="h-5 w-5 text-vision-blue flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-white">
+                Your role: {role.charAt(0).toUpperCase() + role.slice(1)}
+              </p>
+              <p className="text-sm text-white/60 mt-1">
+                {role === 'editor' 
+                  ? 'You can manage inventory and transactions, but cannot modify organization settings or manage members.'
+                  : 'You have read-only access. Contact an admin to manage inventory or change settings.'}
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Organization Info */}
@@ -148,16 +169,18 @@ export default function OrganizationPage() {
                 ) : (
                   <div className="flex items-center gap-2">
                     <p className="text-lg font-semibold text-white">{organization.name}</p>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={() => {
-                        setNewName(organization.name)
-                        setIsEditingName(true)
-                      }}
-                    >
-                      Edit
-                    </Button>
+                    {canManageSettings && (
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => {
+                          setNewName(organization.name)
+                          setIsEditingName(true)
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
@@ -176,15 +199,17 @@ export default function OrganizationPage() {
                   >
                     {copiedCode ? <Check className="h-4 w-4 text-vision-green" /> : <Copy className="h-4 w-4" />}
                   </Button>
-                  <Button 
-                    size="icon" 
-                    variant="outline" 
-                    onClick={handleRegenerateCode}
-                    disabled={regenerateCode.isPending}
-                    title="Generate new code"
-                  >
-                    <RefreshCw className={`h-4 w-4 ${regenerateCode.isPending ? 'animate-spin' : ''}`} />
-                  </Button>
+                  {canManageSettings && (
+                    <Button 
+                      size="icon" 
+                      variant="outline" 
+                      onClick={handleRegenerateCode}
+                      disabled={regenerateCode.isPending}
+                      title="Generate new code"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${regenerateCode.isPending ? 'animate-spin' : ''}`} />
+                    </Button>
+                  )}
                 </div>
                 <p className="text-xs text-white/40">
                   Share this code with others to let them join your organization
@@ -219,21 +244,34 @@ export default function OrganizationPage() {
                           {member.user_id === user?.id ? 'You' : 'M'}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-white">
-                            {member.user_id === user?.id ? 'You' : `Member`}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-white">
+                              {member.user_id === user?.id ? 'You' : `Member`}
+                            </p>
+                            <Badge 
+                              variant={
+                                member.role === 'admin' ? 'default' : 
+                                member.role === 'editor' ? 'secondary' : 
+                                'outline'
+                              }
+                              className="text-xs"
+                            >
+                              {member.role}
+                            </Badge>
+                          </div>
                           <p className="text-xs text-white/40">
                             Joined {new Date(member.joined_at).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
-                      {members.length > 1 && (
+                      {canManageMembers && members.length > 1 && (
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => handleRemoveMember(member.id, member.user_id)}
                           disabled={removeMember.isPending}
                           className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          aria-label="Remove member"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -284,15 +322,18 @@ export default function OrganizationPage() {
                         </p>
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => deleteInvite.mutateAsync(invite.id)}
-                      disabled={deleteInvite.isPending}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {canManageMembers && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => deleteInvite.mutateAsync(invite.id)}
+                        disabled={deleteInvite.isPending}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        aria-label="Delete invite"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>

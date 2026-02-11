@@ -36,18 +36,21 @@ export type Database = {
           id: string
           organization_id: string
           user_id: string
+          role: 'admin' | 'editor' | 'viewer'
           joined_at: string
         }
         Insert: {
           id?: string
           organization_id: string
           user_id: string
+          role?: 'admin' | 'editor' | 'viewer'
           joined_at?: string
         }
         Update: {
           id?: string
           organization_id?: string
           user_id?: string
+          role?: 'admin' | 'editor' | 'viewer'
           joined_at?: string
         }
         Relationships: []
@@ -959,3 +962,6 @@ export type AcquisitionLotUpdate = Tables['acquisition_lots']['Update']
 export type ImportStaging = Tables['import_staging']['Row']
 export type ImportStagingInsert = Tables['import_staging']['Insert']
 export type ImportStagingUpdate = Tables['import_staging']['Update']
+
+// Organization role type
+export type OrganizationRole = 'admin' | 'editor' | 'viewer'
