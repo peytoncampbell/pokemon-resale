@@ -13,12 +13,8 @@
   },
   "crons": [
     {
-      "path": "/api/cron/daily-price-update",
-      "schedule": "0 2 * * *"
-    },
-    {
       "path": "/api/cron/update-prices",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 2 * * *"
     }
   ],
   "headers": [
