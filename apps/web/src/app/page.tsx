@@ -20,6 +20,7 @@ import { ErrorBoundary } from '@/components/error-boundary'
 import { AddInventoryModal } from '@/components/inventory/add-inventory-modal'
 import { SellTransactionModal } from '@/components/transactions/sell-transaction-modal'
 import { OnboardingTour } from '@/components/onboarding/onboarding-tour'
+import { ChangelogModal } from '@/components/changelog-modal'
 import { useBatchPriceRefresh } from '@/hooks/use-price-history'
 import { useInventoryItems } from '@/hooks/use-inventory'
 import { Plus, DollarSign, RefreshCw } from 'lucide-react'
@@ -44,6 +45,7 @@ export default function DashboardPage() {
   return (
     <MainLayout>
       <OnboardingTour />
+      <ChangelogModal />
       <div className="space-y-6">
         {/* Page Header */}
         <div data-tour="dashboard">
