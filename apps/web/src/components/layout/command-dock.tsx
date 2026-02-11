@@ -88,6 +88,7 @@ export function CommandDock({ onMobileMenuToggle }: CommandDockProps) {
                             <Link
                                 key={item.name}
                                 href={item.href}
+                                data-tour={item.name === "Reports" ? "reports" : undefined}
                                 className={cn(
                                     "flex items-center h-12 rounded-xl transition-all duration-200 group relative",
                                     isActive
