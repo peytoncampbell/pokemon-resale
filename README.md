@@ -98,7 +98,101 @@ npm start
 
 # Lint
 npm run lint
+
+# Run unit tests
+npm test
+
+# Run E2E tests
+npm run test:e2e
 ```
+
+## Deployment
+
+### Option 1: Deploy to Vercel (Recommended)
+
+1. Install the [Vercel CLI](https://vercel.com/cli):
+   ```bash
+   npm i -g vercel
+   ```
+
+2. Configure environment variables in the Vercel dashboard:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `JUSTTCG_API_KEY` (optional, for card price data)
+   - `NEXT_PUBLIC_SENTRY_DSN` (optional, for error monitoring)
+   - `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` (optional, for analytics)
+
+3. Deploy:
+   ```bash
+   vercel
+   ```
+
+4. **Cron Jobs**: The `vercel.json` includes cron jobs for automated price updates:
+   - Daily at 2 AM: Full price update (`/api/cron/daily-price-update`)
+   - Every 6 hours: Incremental price update (`/api/cron/update-prices`)
+
+### Option 2: Deploy with Docker
+
+1. Copy the example environment file:
+   ```bash
+   cp .env.production.example .env.production
+   ```
+
+2. Edit `.env.production` with your production values.
+
+3. Use the deployment helper script:
+   ```bash
+   # Make the script executable (Linux/Mac)
+   chmod +x deploy.sh
+
+   # Build and start services
+   ./deploy.sh up
+
+   # Or use individual commands:
+   ./deploy.sh build    # Build Docker image
+   ./deploy.sh up       # Start services
+   ./deploy.sh down     # Stop services
+   ./deploy.sh logs     # View logs
+   ./deploy.sh rebuild  # Rebuild and restart
+   ./deploy.sh clean    # Remove all containers and images
+   ./deploy.sh status   # Show service status
+   ```
+
+4. On Windows, use Docker Compose directly:
+   ```powershell
+   docker-compose build
+   docker-compose up -d
+   ```
+
+5. Access the app at `http://localhost:3000`
+
+6. **Production checklist**:
+   - [ ] Set up SSL/TLS (use nginx or Caddy as reverse proxy)
+   - [ ] Configure firewall rules
+   - [ ] Set up automated backups for Supabase
+   - [ ] Configure monitoring (Sentry, Plausible, etc.)
+   - [ ] Set up log aggregation
+   - [ ] Review and update security headers in `vercel.json`
+
+### Docker Image Details
+
+The multi-stage Dockerfile includes:
+- **Stage 1**: Install dependencies
+- **Stage 2**: Build the Next.js application
+- **Stage 3**: Production runtime (minimal Alpine image)
+- Health check endpoint at `/api/health`
+- Runs as non-root user for security
+- Exposes port 3000
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Your Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Your Supabase anonymous key |
+| `JUSTTCG_API_KEY` | No | JustTCG API key for card price data |
+| `NEXT_PUBLIC_SENTRY_DSN` | No | Sentry DSN for error monitoring |
+| `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` | No | Plausible Analytics domain |
 
 ## License
 

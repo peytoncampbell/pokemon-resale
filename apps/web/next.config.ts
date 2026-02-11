@@ -3,8 +3,12 @@ import { withSentryConfig } from "@sentry/nextjs";
 import withBundleAnalyzer from "@next/bundle-analyzer";
 
 const nextConfig: NextConfig = {
+  // Enable standalone output for Docker deployments
+  output: process.env.DOCKER_BUILD === 'true' ? 'standalone' : undefined,
+  
   // Mark playwright packages as external - they're only used server-side
   serverExternalPackages: ['playwright-core', '@sparticuz/chromium'],
+  
   images: {
     remotePatterns: [
       {
