@@ -1,7 +1,47 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { authLimiter, apiLimiter, getClientIp } from '@/lib/rate-limiter'
 
-export function middleware(_request: NextRequest) {
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const clientIp = getClientIp(request)
+
+  // Apply rate limiting to auth endpoints
+  if (pathname === '/login' || pathname === '/signup' || pathname === '/api/auth') {
+    const { limited, retryAfter } = authLimiter.check(clientIp)
+    if (limited) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(retryAfter || 60),
+            'X-RateLimit-Limit': '5',
+            'X-RateLimit-Remaining': '0',
+          },
+        }
+      )
+    }
+  }
+
+  // Apply rate limiting to API routes
+  if (pathname.startsWith('/api/')) {
+    const { limited, retryAfter } = apiLimiter.check(clientIp)
+    if (limited) {
+      return NextResponse.json(
+        { error: 'Too many API requests. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(retryAfter || 60),
+            'X-RateLimit-Limit': '20',
+            'X-RateLimit-Remaining': '0',
+          },
+        }
+      )
+    }
+  }
+
   const response = NextResponse.next()
 
   // Security headers
