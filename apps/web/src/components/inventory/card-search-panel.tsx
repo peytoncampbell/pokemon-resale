@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { List } from 'react-window'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Search, CreditCard, Package } from 'lucide-react'
@@ -196,45 +197,97 @@ export function CardSearchPanel({ onCardSelect }: CardSearchPanelProps) {
             <div>Set</div>
             <div className="text-right">Price</div>
           </div>
-          <div className="max-h-[400px] overflow-y-auto">
-            {displayCards.data.map((card: UnifiedCard) => (
-              <button
-                key={card.id}
-                onClick={() => onCardSelect(card)}
-                className="w-full grid grid-cols-[50px_1fr_1fr_100px] gap-3 px-4 py-2 text-left hover:bg-accent/10 transition-colors border-b border-white/5 last:border-b-0 items-center"
-              >
-                <div className="w-10 h-14 bg-accent/10 rounded relative overflow-hidden flex-shrink-0">
-                  <Image
-                    src={card.imageSmall}
-                    alt={card.name}
-                    fill
-                    className="object-contain"
-                    sizes="40px"
-                  />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">{card.name}</span>
-                    {card.productType === 'sealed' && (
-                      <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0 flex-shrink-0">
-                        Sealed
-                      </Badge>
+          {displayCards.data.length >= 20 ? (
+            // Use virtualization for large lists
+            <List
+              defaultHeight={400}
+              rowCount={displayCards.data.length}
+              rowHeight={72}
+              rowProps={{ cards: displayCards.data, onCardSelect, formatConverted }}
+              rowComponent={({ index, style, cards, onCardSelect, formatConverted }) => {
+                const card = cards[index]
+                return (
+                  <button
+                    key={card.id}
+                    onClick={() => onCardSelect(card)}
+                    style={style}
+                    className="w-full grid grid-cols-[50px_1fr_1fr_100px] gap-3 px-4 py-2 text-left hover:bg-accent/10 transition-colors border-b border-white/5 items-center"
+                  >
+                    <div className="w-10 h-14 bg-accent/10 rounded relative overflow-hidden flex-shrink-0">
+                      <Image
+                        src={card.imageSmall}
+                        alt={card.name}
+                        fill
+                        className="object-contain"
+                        sizes="40px"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm truncate">{card.name}</span>
+                        {card.productType === 'sealed' && (
+                          <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0 flex-shrink-0">
+                            Sealed
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground truncate">{card.setName}</div>
+                    <div className="text-right">
+                      {card.marketPrice ? (
+                        <span className="text-sm font-bold text-vision-cyan">
+                          {formatConverted(card.marketPrice)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </div>
+                  </button>
+                )
+              }}
+            />
+          ) : (
+            // Render normally for small lists
+            <div className="max-h-[400px] overflow-y-auto">
+              {displayCards.data.map((card: UnifiedCard) => (
+                <button
+                  key={card.id}
+                  onClick={() => onCardSelect(card)}
+                  className="w-full grid grid-cols-[50px_1fr_1fr_100px] gap-3 px-4 py-2 text-left hover:bg-accent/10 transition-colors border-b border-white/5 last:border-b-0 items-center"
+                >
+                  <div className="w-10 h-14 bg-accent/10 rounded relative overflow-hidden flex-shrink-0">
+                    <Image
+                      src={card.imageSmall}
+                      alt={card.name}
+                      fill
+                      className="object-contain"
+                      sizes="40px"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm truncate">{card.name}</span>
+                      {card.productType === 'sealed' && (
+                        <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0 flex-shrink-0">
+                          Sealed
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-sm text-muted-foreground truncate">{card.setName}</div>
+                  <div className="text-right">
+                    {card.marketPrice ? (
+                      <span className="text-sm font-bold text-vision-cyan">
+                        {formatConverted(card.marketPrice)}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </div>
-                </div>
-                <div className="text-sm text-muted-foreground truncate">{card.setName}</div>
-                <div className="text-right">
-                  {card.marketPrice ? (
-                    <span className="text-sm font-bold text-vision-cyan">
-                      {formatConverted(card.marketPrice)}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
