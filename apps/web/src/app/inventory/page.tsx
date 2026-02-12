@@ -68,22 +68,27 @@ export default function InventoryPage() {
   const { data: unrealizedGains } = useUnrealizedGains()
   const { refreshPrices, isRefreshing } = useBatchPriceRefresh()
 
-  // Fetch last price update timestamp
+  // Fetch last price update timestamp (gracefully fails if column not in schema cache)
   const { data: lastPriceUpdate } = useQuery({
     queryKey: ['inventory', 'last-price-update'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('inventory')
-        .select('price_updated_at')
-        .not('price_updated_at', 'is', null)
-        .order('price_updated_at', { ascending: false })
-        .limit(1)
-        .single()
+      try {
+        const { data, error } = await supabase
+          .from('inventory')
+          .select('price_updated_at')
+          .not('price_updated_at', 'is', null)
+          .order('price_updated_at', { ascending: false })
+          .limit(1)
+          .single()
 
-      if (error || !data) return null
-      return (data as unknown as { price_updated_at: string }).price_updated_at
+        if (error || !data) return null
+        return (data as unknown as { price_updated_at: string }).price_updated_at
+      } catch {
+        return null
+      }
     },
     staleTime: 60_000,
+    retry: false,
   })
 
   // Direct price lookup as fallback (bypasses acquisition_lots dependency)
