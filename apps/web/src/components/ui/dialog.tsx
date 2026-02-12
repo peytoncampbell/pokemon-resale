@@ -83,7 +83,7 @@ export function Dialog({
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
-      className="backdrop:bg-background/90 backdrop:backdrop-blur-md bg-transparent p-0 w-full max-w-none"
+      className="backdrop:bg-background/80 bg-transparent p-0 w-full max-w-none"
       style={{ zIndex: 10001 }}
       aria-labelledby="dialog-title"
       aria-modal="true"
