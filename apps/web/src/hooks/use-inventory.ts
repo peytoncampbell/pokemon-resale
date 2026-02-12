@@ -366,6 +366,8 @@ export function useRecentCards(gameType: GameType = 'pokemon') {
   return useQuery({
     queryKey: ['cards', 'recent', gameType],
     queryFn: () => cardApi.getRecentCards(gameType),
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -374,7 +376,8 @@ export function useSearchCards(query: string, gameType: GameType = 'pokemon', en
     queryKey: ['cards', 'search', query, gameType],
     queryFn: () => cardApi.searchCards(query, gameType),
     enabled: enabled && query.length > 0,
-    staleTime: 5 * 60 * 1000, // Cache results for 5 minutes since card data doesn't change often
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -384,6 +387,7 @@ export function useSearchSealed(query: string, gameType: GameType = 'pokemon', e
     queryKey: ['sealed', 'search', query, gameType],
     queryFn: () => cardApi.searchSealed(query, gameType),
     enabled: enabled && query.length > 0,
+    retry: 1,
     staleTime: 60 * 60 * 1000,
   })
 }
@@ -392,6 +396,7 @@ export function useRecentSealed(gameType: GameType = 'pokemon') {
   return useQuery({
     queryKey: ['sealed', 'recent', gameType],
     queryFn: () => cardApi.getRecentSealed(gameType),
+    retry: 1,
     staleTime: 60 * 60 * 1000,
   })
 }

@@ -34,16 +34,16 @@ export function CardSearchPanel({ onCardSelect }: CardSearchPanelProps) {
   const { formatConverted } = useCurrency()
 
   // Cards queries
-  const { data: recentCards, isLoading: isLoadingRecentCards } = useRecentCards(gameType)
-  const { data: searchCardsResults, isLoading: isSearchingCards } = useSearchCards(
+  const { data: recentCards, isLoading: isLoadingRecentCards, error: recentCardsError } = useRecentCards(gameType)
+  const { data: searchCardsResults, isLoading: isSearchingCards, error: searchCardsError } = useSearchCards(
     searchQuery,
     gameType,
     searchEnabled && productTab === 'cards'
   )
 
   // Sealed queries
-  const { data: recentSealed, isLoading: isLoadingRecentSealed } = useRecentSealed(gameType)
-  const { data: searchSealedResults, isLoading: isSearchingSealed } = useSearchSealed(
+  const { data: recentSealed, isLoading: isLoadingRecentSealed, error: recentSealedError } = useRecentSealed(gameType)
+  const { data: searchSealedResults, isLoading: isSearchingSealed, error: searchSealedError } = useSearchSealed(
     searchQuery,
     gameType,
     searchEnabled && productTab === 'sealed'
@@ -67,6 +67,15 @@ export function CardSearchPanel({ onCardSelect }: CardSearchPanelProps) {
       : searchEnabled && searchQuery.length > 0
         ? isSearchingSealed
         : isLoadingRecentSealed
+
+  const fetchError =
+    productTab === 'cards'
+      ? searchEnabled && searchQuery.length > 0
+        ? searchCardsError
+        : recentCardsError
+      : searchEnabled && searchQuery.length > 0
+        ? searchSealedError
+        : recentSealedError
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -183,8 +192,21 @@ export function CardSearchPanel({ onCardSelect }: CardSearchPanelProps) {
 
       {/* Loading State */}
       {isLoading && (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex flex-col items-center justify-center py-12 gap-3">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-vision-blue border-r-transparent"></div>
+          <p className="text-xs text-muted-foreground">Searching TCGPlayer...</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {!isLoading && fetchError && (
+        <div className="text-center py-8 px-4">
+          <p className="text-sm text-red-400 font-medium">Failed to load cards</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {fetchError instanceof Error && fetchError.message.includes('timeout')
+              ? 'TCGPlayer is taking too long to respond. Try again in a moment.'
+              : 'Something went wrong. Please try again.'}
+          </p>
         </div>
       )}
 

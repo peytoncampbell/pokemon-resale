@@ -39,7 +39,7 @@ async function fetchScraper(params: Record<string, string>): Promise<ScraperResp
     headers.Authorization = `Bearer ${session.access_token}`
   }
 
-  const response = await fetchWithTimeout(url, { headers, timeoutMs: TIMEOUTS.SCRAPING })
+  const response = await fetchWithTimeout(url, { headers, timeoutMs: TIMEOUTS.DEFAULT })
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
     throw new Error(errorData.error || `Scraper API error: ${response.status}`)
