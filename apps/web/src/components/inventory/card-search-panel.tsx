@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { List } from 'react-window'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Search, CreditCard, Package } from 'lucide-react'
-import { useSearchCards, useRecentCards, useSearchSealed, useRecentSealed } from '@/hooks/use-inventory'
+import { useSearchCards, useSearchSealed } from '@/hooks/use-inventory'
 import type { GameType, UnifiedCard } from '@/lib/card-types'
 import Image from 'next/image'
 import { useCurrency } from '@/hooks/use-currency'
@@ -33,49 +32,31 @@ export function CardSearchPanel({ onCardSelect }: CardSearchPanelProps) {
   const [productTab, setProductTab] = useState<ProductTab>('cards')
   const { formatConverted } = useCurrency()
 
-  // Cards queries
-  const { data: recentCards, isLoading: isLoadingRecentCards, error: recentCardsError } = useRecentCards(gameType)
+  // Only fetch when user explicitly searches (no auto-fetch on modal open)
   const { data: searchCardsResults, isLoading: isSearchingCards, error: searchCardsError } = useSearchCards(
     searchQuery,
     gameType,
     searchEnabled && productTab === 'cards'
   )
 
-  // Sealed queries
-  const { data: recentSealed, isLoading: isLoadingRecentSealed, error: recentSealedError } = useRecentSealed(gameType)
   const { data: searchSealedResults, isLoading: isSearchingSealed, error: searchSealedError } = useSearchSealed(
     searchQuery,
     gameType,
     searchEnabled && productTab === 'sealed'
   )
 
-  // Determine which data to display based on product tab
-  const displayCards =
-    productTab === 'cards'
-      ? searchEnabled && searchQuery.length > 0
-        ? searchCardsResults
-        : recentCards
-      : searchEnabled && searchQuery.length > 0
-        ? searchSealedResults
-        : recentSealed
+  // Only show results when user has searched
+  const displayCards = searchEnabled && searchQuery.length > 0
+    ? (productTab === 'cards' ? searchCardsResults : searchSealedResults)
+    : undefined
 
-  const isLoading =
-    productTab === 'cards'
-      ? searchEnabled && searchQuery.length > 0
-        ? isSearchingCards
-        : isLoadingRecentCards
-      : searchEnabled && searchQuery.length > 0
-        ? isSearchingSealed
-        : isLoadingRecentSealed
+  const isLoading = searchEnabled && searchQuery.length > 0
+    ? (productTab === 'cards' ? isSearchingCards : isSearchingSealed)
+    : false
 
-  const fetchError =
-    productTab === 'cards'
-      ? searchEnabled && searchQuery.length > 0
-        ? searchCardsError
-        : recentCardsError
-      : searchEnabled && searchQuery.length > 0
-        ? searchSealedError
-        : recentSealedError
+  const fetchError = searchEnabled && searchQuery.length > 0
+    ? (productTab === 'cards' ? searchCardsError : searchSealedError)
+    : null
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -157,7 +138,7 @@ export function CardSearchPanel({ onCardSelect }: CardSearchPanelProps) {
         <label className="text-sm font-semibold mb-3 block text-foreground">
           {searchEnabled && searchQuery.length > 0
             ? 'Search Results'
-            : `Recent ${gameType === 'pokemon' ? 'Pokemon' : 'One Piece'} ${productTab === 'cards' ? 'Cards' : 'Sealed Products'}`}
+            : `Search ${gameType === 'pokemon' ? 'Pokemon' : 'One Piece'} ${productTab === 'cards' ? 'Cards' : 'Sealed Products'}`}
         </label>
         <div className="relative flex gap-2">
           <div className="relative flex-1">
@@ -219,97 +200,55 @@ export function CardSearchPanel({ onCardSelect }: CardSearchPanelProps) {
             <div>Set</div>
             <div className="text-right">Price</div>
           </div>
-          {displayCards.data.length >= 20 ? (
-            // Use virtualization for large lists
-            <List
-              defaultHeight={400}
-              rowCount={displayCards.data.length}
-              rowHeight={72}
-              rowProps={{ cards: displayCards.data, onCardSelect, formatConverted }}
-              rowComponent={({ index, style, cards, onCardSelect, formatConverted }) => {
-                const card = cards[index]
-                return (
-                  <button
-                    key={card.id}
-                    onClick={() => onCardSelect(card)}
-                    style={style}
-                    className="w-full grid grid-cols-[50px_1fr_1fr_100px] gap-3 px-4 py-2 text-left hover:bg-accent/10 transition-colors border-b border-white/5 items-center"
-                  >
-                    <div className="w-10 h-14 bg-accent/10 rounded relative overflow-hidden flex-shrink-0">
-                      <Image
-                        src={card.imageSmall}
-                        alt={card.name}
-                        fill
-                        className="object-contain"
-                        sizes="40px"
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm truncate">{card.name}</span>
-                        {card.productType === 'sealed' && (
-                          <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0 flex-shrink-0">
-                            Sealed
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-sm text-muted-foreground truncate">{card.setName}</div>
-                    <div className="text-right">
-                      {card.marketPrice ? (
-                        <span className="text-sm font-bold text-vision-cyan">
-                          {formatConverted(card.marketPrice)}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </div>
-                  </button>
-                )
-              }}
-            />
-          ) : (
-            // Render normally for small lists
-            <div className="max-h-[400px] overflow-y-auto">
-              {displayCards.data.map((card: UnifiedCard) => (
-                <button
-                  key={card.id}
-                  onClick={() => onCardSelect(card)}
-                  className="w-full grid grid-cols-[50px_1fr_1fr_100px] gap-3 px-4 py-2 text-left hover:bg-accent/10 transition-colors border-b border-white/5 last:border-b-0 items-center"
-                >
-                  <div className="w-10 h-14 bg-accent/10 rounded relative overflow-hidden flex-shrink-0">
-                    <Image
-                      src={card.imageSmall}
-                      alt={card.name}
-                      fill
-                      className="object-contain"
-                      sizes="40px"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm truncate">{card.name}</span>
-                      {card.productType === 'sealed' && (
-                        <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0 flex-shrink-0">
-                          Sealed
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-sm text-muted-foreground truncate">{card.setName}</div>
-                  <div className="text-right">
-                    {card.marketPrice ? (
-                      <span className="text-sm font-bold text-vision-cyan">
-                        {formatConverted(card.marketPrice)}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
+          <div className="max-h-[400px] overflow-y-auto">
+            {displayCards.data.map((card: UnifiedCard) => (
+              <button
+                key={card.id}
+                onClick={() => onCardSelect(card)}
+                className="w-full grid grid-cols-[50px_1fr_1fr_100px] gap-3 px-4 py-2 text-left hover:bg-accent/10 transition-colors border-b border-white/5 last:border-b-0 items-center"
+              >
+                <div className="w-10 h-14 bg-accent/10 rounded relative overflow-hidden flex-shrink-0">
+                  <Image
+                    src={card.imageSmall}
+                    alt={card.name}
+                    fill
+                    className="object-contain"
+                    sizes="40px"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">{card.name}</span>
+                    {card.productType === 'sealed' && (
+                      <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0 flex-shrink-0">
+                        Sealed
+                      </Badge>
                     )}
                   </div>
-                </button>
-              ))}
-            </div>
-          )}
+                </div>
+                <div className="text-sm text-muted-foreground truncate">{card.setName}</div>
+                <div className="text-right">
+                  {card.marketPrice ? (
+                    <span className="text-sm font-bold text-vision-cyan">
+                      {formatConverted(card.marketPrice)}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Initial State — no search yet */}
+      {!isLoading && !fetchError && !displayCards && (
+        <div className="text-center py-12">
+          <Search className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="text-muted-foreground text-sm">
+            Type a name and press Enter to search
+          </p>
         </div>
       )}
 
