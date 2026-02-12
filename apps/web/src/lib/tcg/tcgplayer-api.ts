@@ -77,7 +77,7 @@ export async function searchTCGPlayer(
   const response = await fetchWithTimeout(
     `${SEARCH_API}/search/request?q=${encodeURIComponent(query)}&isList=false`,
     {
-      timeoutMs: TIMEOUTS.DEFAULT,
+      timeoutMs: TIMEOUTS.FAST,
       method: 'POST',
       headers: HEADERS,
       body: JSON.stringify(body),
@@ -111,10 +111,12 @@ export async function searchTCGPlayer(
  * Fetch product details for multiple product IDs
  */
 async function fetchProductDetails(productIds: number[]): Promise<TCGPlayerProduct[]> {
+  // Limit to 12 products to reduce wait time on slow connections
+  const limitedIds = productIds.slice(0, 12)
   const results = await Promise.allSettled(
-    productIds.map(async (id) => {
+    limitedIds.map(async (id) => {
       const response = await fetchWithTimeout(`${SEARCH_API}/product/${id}/details`, {
-        timeoutMs: TIMEOUTS.DEFAULT,
+        timeoutMs: TIMEOUTS.FAST,
         headers: HEADERS,
       })
       if (!response.ok) return null
