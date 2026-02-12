@@ -65,7 +65,7 @@ export function middleware(request: NextRequest) {
     "default-src 'self'",
     `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://plausible.io`,
     `style-src 'self' 'unsafe-inline'`,
-    `img-src 'self' data: blob: https://images.pokemontcg.io https://tcgplayer-cdn.tcgplayer.com https://storage.googleapis.com${supabaseDomain ? ` https://${supabaseDomain}` : ''}`,
+    `img-src 'self' data: blob: https://images.pokemontcg.io https://tcgplayer-cdn.tcgplayer.com https://storage.googleapis.com https://grainy-gradients.vercel.app${supabaseDomain ? ` https://${supabaseDomain}` : ''}`,
     `font-src 'self'`,
     `connect-src 'self'${supabaseDomain ? ` https://${supabaseDomain} wss://${supabaseDomain}` : ''} https://api.justtcg.com`,
     "frame-ancestors 'none'",
