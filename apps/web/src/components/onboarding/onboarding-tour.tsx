@@ -152,7 +152,7 @@ export function OnboardingTour() {
           backgroundColor: colors.vision.navyLight,
           textColor: colors.foreground,
           overlayColor: 'rgba(11, 20, 55, 0.8)',
-          zIndex: 10000,
+          zIndex: 999,
           arrowColor: colors.vision.navyLight,
         },
         tooltip: {
