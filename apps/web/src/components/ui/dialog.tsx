@@ -34,27 +34,31 @@ export function Dialog({
   const dialogRef = useRef<HTMLDialogElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
 
+  // Store onClose in a ref to avoid re-triggering the effect
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return
 
-    if (open) {
+    if (open && !dialog.open) {
       dialog.showModal()
       // Focus trap: focus the close button when dialog opens
       closeButtonRef.current?.focus()
-    } else {
+    } else if (!open && dialog.open) {
       dialog.close()
     }
 
     // Handle escape key
     const handleCancel = (e: Event) => {
       e.preventDefault()
-      onClose()
+      onCloseRef.current()
     }
 
     dialog.addEventListener('cancel', handleCancel)
     return () => dialog.removeEventListener('cancel', handleCancel)
-  }, [open, onClose])
+  }, [open])
 
   // Handle backdrop click
   const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
